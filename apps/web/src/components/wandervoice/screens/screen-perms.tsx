@@ -1,5 +1,9 @@
+'use client'
+
+import { useState } from 'react'
 import { colors, borders } from '../tokens'
 import { BackIcon, MapPinIcon, MicIcon, CheckIcon } from '../icons'
+import { useAppContext } from '../context/app-context'
 
 function PermCard({
   icon: Icon,
@@ -7,12 +11,14 @@ function PermCard({
   required = false,
   description,
   granted = false,
+  onAllow,
 }: {
   icon: any
   title: string
   required?: boolean
   description: string
   granted?: boolean
+  onAllow: () => void
 }) {
   return (
     <div
@@ -52,6 +58,7 @@ function PermCard({
           </div>
         ) : (
           <button
+            onClick={onAllow}
             style={{
               padding: '6px 12px',
               borderRadius: 20,
@@ -74,10 +81,14 @@ function PermCard({
   )
 }
 
-function ScreenPermsBase({ granted = false }: { granted?: boolean }) {
+export function ScreenPerms() {
+  const { navigate, goBack } = useAppContext()
+  const [locationGranted, setLocationGranted] = useState(false)
+  const [micGranted, setMicGranted] = useState(false)
+
   return (
     <div style={{ width: '100%', height: '100%', background: colors.leaf, display: 'flex', flexDirection: 'column', padding: '16px 20px 24px' }}>
-      <div style={{ paddingBottom: 24, display: 'flex', alignItems: 'center' }}>
+      <div style={{ paddingBottom: 24, display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={goBack}>
         <BackIcon size={20} color={colors.mist} />
       </div>
 
@@ -97,29 +108,32 @@ function ScreenPermsBase({ granted = false }: { granted?: boolean }) {
             title="Location"
             required
             description="Detects gems as you walk."
-            granted={granted}
+            granted={locationGranted}
+            onAllow={() => setLocationGranted(true)}
           />
           <PermCard
             icon={MicIcon}
             title="Microphone"
             description="Ask questions while walking."
-            granted={granted}
+            granted={micGranted}
+            onAllow={() => setMicGranted(true)}
           />
         </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
         <button
+          onClick={() => locationGranted && navigate('onboarding-name')}
           style={{
             width: '100%',
             padding: '14px',
-            background: granted ? colors.teal : 'rgba(245,247,242,0.1)',
-            color: granted ? colors.mist : 'rgba(245,247,242,0.3)',
+            background: locationGranted ? colors.teal : 'rgba(245,247,242,0.1)',
+            color: locationGranted ? colors.mist : 'rgba(245,247,242,0.3)',
             border: 'none',
             borderRadius: 30,
             fontSize: 15,
             fontWeight: 600,
-            cursor: granted ? 'pointer' : 'not-allowed',
+            cursor: locationGranted ? 'pointer' : 'not-allowed',
             transition: 'all 0.2s',
           }}
         >
@@ -133,10 +147,49 @@ function ScreenPermsBase({ granted = false }: { granted?: boolean }) {
   )
 }
 
+// Static variants kept for the /prototype viewer
 export function ScreenPermsA() {
-  return <ScreenPermsBase granted={false} />
+  const [locationGranted, setLocationGranted] = useState(false)
+  const [micGranted, setMicGranted] = useState(false)
+  return (
+    <div style={{ width: '100%', height: '100%', background: colors.leaf, display: 'flex', flexDirection: 'column', padding: '16px 20px 24px' }}>
+      <div style={{ paddingBottom: 24 }}><BackIcon size={20} color={colors.mist} /></div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: colors.mist, margin: '0 0 8px 0', letterSpacing: '-0.3px' }}>Before you go</h1>
+          <p style={{ fontSize: 14, color: colors.bark, margin: 0 }}>Two things WanderVoice needs from you.</p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <PermCard icon={MapPinIcon} title="Location" required description="Detects gems as you walk." granted={locationGranted} onAllow={() => setLocationGranted(true)} />
+          <PermCard icon={MicIcon} title="Microphone" description="Ask questions while walking." granted={micGranted} onAllow={() => setMicGranted(true)} />
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <button style={{ width: '100%', padding: '14px', background: 'rgba(245,247,242,0.1)', color: 'rgba(245,247,242,0.3)', border: 'none', borderRadius: 30, fontSize: 15, fontWeight: 600, cursor: 'not-allowed' }}>Continue →</button>
+        <span style={{ fontSize: 10, color: colors.bark }}>Location only active while app is open.</span>
+      </div>
+    </div>
+  )
 }
 
 export function ScreenPermsB() {
-  return <ScreenPermsBase granted={true} />
+  return (
+    <div style={{ width: '100%', height: '100%', background: colors.leaf, display: 'flex', flexDirection: 'column', padding: '16px 20px 24px' }}>
+      <div style={{ paddingBottom: 24 }}><BackIcon size={20} color={colors.mist} /></div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: colors.mist, margin: '0 0 8px 0', letterSpacing: '-0.3px' }}>Before you go</h1>
+          <p style={{ fontSize: 14, color: colors.bark, margin: 0 }}>Two things WanderVoice needs from you.</p>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <PermCard icon={MapPinIcon} title="Location" required description="Detects gems as you walk." granted onAllow={() => {}} />
+          <PermCard icon={MicIcon} title="Microphone" description="Ask questions while walking." granted onAllow={() => {}} />
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <button style={{ width: '100%', padding: '14px', background: colors.teal, color: colors.mist, border: 'none', borderRadius: 30, fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Continue →</button>
+        <span style={{ fontSize: 10, color: colors.bark }}>Location only active while app is open.</span>
+      </div>
+    </div>
+  )
 }

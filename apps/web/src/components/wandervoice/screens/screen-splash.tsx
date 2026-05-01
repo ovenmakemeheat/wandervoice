@@ -1,5 +1,8 @@
+'use client'
+
 export { colors } from '../tokens'
 import { colors } from '../tokens'
+import { useAppContext } from '../context/app-context'
 
 function LogoMark({ size = 24 }: { size?: number }) {
   return (
@@ -16,6 +19,8 @@ function LogoMark({ size = 24 }: { size?: number }) {
 }
 
 export function ScreenSplash() {
+  const { navigate } = useAppContext()
+
   return (
     <div style={{ width: '100%', height: '100%', background: colors.canopy, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -31,6 +36,7 @@ export function ScreenSplash() {
 
       <div style={{ width: '100%', marginBottom: 40, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
         <button
+          onClick={() => navigate('perms')}
           style={{
             width: '100%',
             padding: '14px',
@@ -45,7 +51,10 @@ export function ScreenSplash() {
         >
           Begin your walk
         </button>
-        <span style={{ fontSize: 11, color: colors.bark, cursor: 'pointer', textDecoration: 'underline' }}>
+        <span
+          onClick={() => navigate('sign-in')}
+          style={{ fontSize: 11, color: colors.bark, cursor: 'pointer', textDecoration: 'underline' }}
+        >
           Already explored?
         </span>
       </div>

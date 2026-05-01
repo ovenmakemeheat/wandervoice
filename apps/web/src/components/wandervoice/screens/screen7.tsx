@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import { colors, borders } from '../tokens'
 import { ToggleSwitch } from '../primitives/toggle-switch'
+import { useAppContext } from '../context/app-context'
 
 export function S7A() {
+  const { setAutoAudio, setLeadingCues, setOnboardingDone, navigate } = useAppContext()
   const [autoOn, setAutoOn] = useState(false)
   const [leading, setLeading] = useState(true)
 
@@ -113,6 +115,12 @@ export function S7A() {
 
       {/* CTA */}
       <div
+        onClick={() => {
+          setAutoAudio(autoOn)
+          setLeadingCues(leading)
+          setOnboardingDone()
+          navigate('home')
+        }}
         style={{
           marginTop: 16,
           background: colors.teal,

@@ -9,17 +9,17 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
+    "@wandervoice/env": "workspace:*",
     "@wandervoice/ui": "workspace:*",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "dotenv": "catalog:",
     "lucide-react": "catalog:",
     "next": "^16.2.0",
     "next-themes": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "sonner": "catalog:",
-    "babel-plugin-react-compiler": "^1.0.0",
-    "dotenv": "catalog:",
-    "zod": "catalog:",
-    "@wandervoice/env": "workspace:*"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { colors, borders } from '../tokens'
 import { ModePills } from '../primitives/mode-pills'
 import { NarrativeToggle } from '../primitives/narrative-toggle'
@@ -15,9 +15,29 @@ const SUGGESTIONS = [
   { label: 'Try Facts mode', reason: 'Dates and measurements available' },
 ]
 
+const NARRATION_TEXT = "Hàng Bạc means Silver Street. Craftsmen from Châu Khê village set up workshops here in the 15th century, forging coins and jewelry for the royal court. Today, it remains the heart of Hanoi's jewelry trade, where the rhythmic sound of small hammers still echoes through the narrow shopfronts..."
+
 export function NarrativeTab({ dark = false }: NarrativeTabProps) {
   const [narrating, setNarrating] = useState(true)
   const [mode, setMode] = useState<'Story' | 'Facts' | 'Secrets'>('Story')
+  const [displayText, setDisplayText] = useState('')
+  const [charIndex, setCharIndex] = useState(0)
+
+  useEffect(() => {
+    if (!narrating) {
+      setDisplayText('')
+      setCharIndex(0)
+      return
+    }
+
+    if (charIndex < NARRATION_TEXT.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText(prev => prev + NARRATION_TEXT[charIndex])
+        setCharIndex(prev => prev + 1)
+      }, 30)
+      return () => clearTimeout(timeout)
+    }
+  }, [charIndex, narrating])
 
   return (
     <div
@@ -56,6 +76,51 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
       </div>
 
       <ModePills mode={mode} setMode={setMode} dark={dark} />
+
+      {/* Narrative Typewriter Space */}
+      <div 
+        style={{ 
+          minHeight: 100, 
+          padding: '12px', 
+          background: dark ? 'rgba(245,247,242,0.03)' : 'rgba(28,39,32,0.02)',
+          borderRadius: 12,
+          border: dark ? '1px solid rgba(245,247,242,0.08)' : '1px solid rgba(28,39,32,0.05)',
+          position: 'relative'
+        }}
+      >
+        <div style={{ 
+          fontSize: 13, 
+          lineHeight: 1.5, 
+          color: dark ? colors.mist : colors.leaf,
+          opacity: 0.9,
+          fontFamily: 'serif',
+          fontStyle: 'italic'
+        }}>
+          {displayText}
+          <span style={{ 
+            display: narrating && charIndex < NARRATION_TEXT.length ? 'inline-block' : 'none',
+            width: 2,
+            height: 14,
+            background: colors.teal,
+            marginLeft: 2,
+            verticalAlign: 'middle',
+            animation: 'blink 1s infinite'
+          }} />
+        </div>
+        {!narrating && (
+          <div style={{ 
+            position: 'absolute', 
+            inset: 0, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            color: colors.bark,
+            fontSize: 12
+          }}>
+            Narrative paused
+          </div>
+        )}
+      </div>
 
       {/* Personalization Section */}
       <div style={{ marginTop: 4, marginBottom: 8 }}>
@@ -158,6 +223,12 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
           </div>
         ))}
       </div>
+      <style>{`
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+      `}</style>
     </div>
   )
 }

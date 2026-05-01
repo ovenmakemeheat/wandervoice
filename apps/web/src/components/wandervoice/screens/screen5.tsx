@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { colors, borders } from '../tokens'
+import { useAppContext } from '../context/app-context'
+import type { NarrativeMode } from '../context/app-context'
 
 const MODES = [
   { m: 'Story', desc: 'Narrative arcs, characters, vivid scenes. History as a place remembers it.' },
@@ -12,6 +14,7 @@ const MODES = [
 type ModeKey = typeof MODES[number]['m']
 
 export function S5A() {
+  const { setNarrativeMode, navigate } = useAppContext()
   const [sel, setSel] = useState<ModeKey>('Story')
 
   return (
@@ -115,6 +118,10 @@ export function S5A() {
 
       {/* CTA */}
       <div
+        onClick={() => {
+          setNarrativeMode(sel.toLowerCase() as NarrativeMode)
+          navigate('onboarding-setup')
+        }}
         style={{
           marginTop: 18,
           background: colors.teal,

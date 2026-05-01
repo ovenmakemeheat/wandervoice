@@ -97,14 +97,15 @@ const SCREENS: ScreenGroup[] = [
 
 function LogoMark({ size = 24 }: { size?: number }) {
   return (
-    <svg width={size} height={Math.round(size * 0.42)} viewBox="0 0 60 25">
-      <circle cx="6" cy="20" r="2.5" fill="none" stroke={colors.teal} strokeWidth="1.6" />
-      <circle cx="16" cy="16" r="2.5" fill="none" stroke={colors.teal} strokeWidth="1.6" />
-      <circle cx="27" cy="13" r="2.5" fill="none" stroke={colors.teal} strokeWidth="1.6" />
-      <line x1="35" y1="24" x2="35" y2="10" stroke={colors.teal} strokeWidth="2.4" strokeLinecap="round" />
-      <line x1="43" y1="24" x2="43" y2="4" stroke={colors.teal} strokeWidth="2.4" strokeLinecap="round" />
-      <line x1="51" y1="24" x2="51" y2="9" stroke={colors.teal} strokeWidth="2.4" strokeLinecap="round" />
-      <line x1="58" y1="24" x2="58" y2="14" stroke={colors.teal} strokeWidth="2.4" strokeLinecap="round" />
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none">
+      <circle cx="24" cy="24" r="21" stroke={colors.teal} strokeWidth="1.6" opacity="0.35" />
+      <circle cx="24" cy="24" r="13" stroke={colors.teal} strokeWidth="1.2" opacity="0.2" />
+      <circle cx="24" cy="24" r="2.5" fill={colors.teal} />
+      <polygon points="24,4 21.5,20 26.5,20" fill={colors.teal} />
+      <polygon points="24,44 21.8,28 26.2,28" fill={colors.teal} opacity="0.45" />
+      <polygon points="44,24 28,21.5 28,26.5" fill={colors.teal} opacity="0.6" />
+      <polygon points="4,24 20,21.5 20,26.5" fill={colors.teal} opacity="0.6" />
+      <text x="24" y="13" textAnchor="middle" fontSize="5.5" fontWeight="700" fill={colors.teal} fontFamily="system-ui, sans-serif" letterSpacing="0.5">N</text>
     </svg>
   )
 }

@@ -6,9 +6,10 @@ import { MapPlaceholder } from '../primitives/map-placeholder'
 import { NarrativeToggle } from '../primitives/narrative-toggle'
 import { SubPlaceChip } from '../primitives/sub-place-chip'
 import { ApproachBanner } from '../primitives/approach-banner'
-import { NavBar } from '../primitives/nav-bar'
+import { NavBar, NAV_HEIGHT } from '../primitives/nav-bar'
+import { DiamondMarker } from '../icons'
 
-// ── Variant A: Dark, toggle center + radar ────────────────────────────────
+// ── Variant A: Dark, toggle center ────────────────────────────────────────
 
 export function S6A() {
   const [narrating, setNarrating] = useState(true)
@@ -38,7 +39,6 @@ export function S6A() {
             ))}
           </div>
         </div>
-        {/* Mode switcher */}
         <div style={{ display: 'flex', background: 'rgba(245,247,242,0.07)', borderRadius: 20, padding: 2, gap: 1 }}>
           {KEYS.map((k, i) => {
             const active = mode === MODES[i]
@@ -86,7 +86,7 @@ export function S6A() {
       </div>
 
       {/* Coming up */}
-      <div style={{ padding: '0 12px 10px' }}>
+      <div style={{ padding: `0 12px ${NAV_HEIGHT + 4}px` }}>
         <div style={{ fontSize: 10, color: colors.bark, letterSpacing: 1.5, marginBottom: 6 }}>COMING UP</div>
         <div style={{ display: 'flex', gap: 7 }}>
           {COMING_UP.map((g) => (
@@ -100,7 +100,7 @@ export function S6A() {
                 padding: '6px 8px',
               }}
             >
-              <div style={{ width: 7, height: 7, background: g.h ? colors.bark : colors.teal, transform: 'rotate(45deg)', borderRadius: 1, marginBottom: 4 }} />
+              <DiamondMarker size={7} color={g.h ? colors.bark : colors.teal} style={{ marginBottom: 4, borderRadius: 1 }} />
               <div style={{ fontSize: 10, fontWeight: 600, color: g.h ? colors.bark : colors.mist }}>{g.n}</div>
               <div style={{ fontSize: 9, color: colors.bark }}>{g.d}</div>
             </div>
@@ -137,12 +137,7 @@ export function S6B() {
             <div
               key={m}
               onClick={() => setMode(m)}
-              style={{
-                padding: '3px 9px',
-                borderRadius: 16,
-                background: mode === m ? colors.teal : 'transparent',
-                cursor: 'pointer',
-              }}
+              style={{ padding: '3px 9px', borderRadius: 16, background: mode === m ? colors.teal : 'transparent', cursor: 'pointer' }}
             >
               <span style={{ fontSize: 10, fontWeight: mode === m ? 600 : 400, color: mode === m ? colors.mist : colors.bark }}>{m}</span>
             </div>
@@ -173,11 +168,11 @@ export function S6B() {
         </div>
       </div>
 
-      {/* Map */}
+      {/* Map with approach label */}
       <div style={{ position: 'relative', margin: '8px 12px 0' }}>
         <MapPlaceholder h={120} />
         <div style={{ position: 'absolute', bottom: 8, left: 8, background: colors.gold, borderRadius: 12, padding: '3px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
-          <div style={{ width: 6, height: 6, background: colors.leaf, transform: 'rotate(45deg)', borderRadius: 1 }} />
+          <DiamondMarker size={6} color={colors.leaf} style={{ borderRadius: 1 }} />
           <span style={{ fontSize: 10, fontWeight: 500, color: colors.leaf }}>Hàng Bạc · 120m</span>
         </div>
       </div>
@@ -185,19 +180,17 @@ export function S6B() {
       {/* Narrative toggle */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 20px' }}>
         {narrating && (
-          <span style={{ fontSize: 11, color: colors.bark, textAlign: 'center' }}>
-            Narrating · {sub} · {mode} mode
-          </span>
+          <span style={{ fontSize: 11, color: colors.bark, textAlign: 'center' }}>Narrating · {sub} · {mode} mode</span>
         )}
         <NarrativeToggle active={narrating} onToggle={() => setNarrating((p) => !p)} dark={false} />
       </div>
 
       {/* Gem row */}
-      <div style={{ padding: '0 12px 10px' }}>
+      <div style={{ padding: `0 12px ${NAV_HEIGHT + 4}px` }}>
         <div style={{ display: 'flex', gap: 7 }}>
           {GEMS_LIST.map((g) => (
             <div key={g.n} style={{ flex: 1, background: 'white', border: borders.border, borderRadius: 8, padding: '7px 8px' }}>
-              <div style={{ width: 7, height: 7, background: colors.teal, transform: 'rotate(45deg)', borderRadius: 1, marginBottom: 4 }} />
+              <DiamondMarker size={7} color={colors.teal} style={{ marginBottom: 4, borderRadius: 1 }} />
               <div style={{ fontSize: 10, fontWeight: 600, color: colors.leaf }}>{g.n}</div>
               <div style={{ fontSize: 9, color: colors.bark }}>{g.d}</div>
             </div>
@@ -210,7 +203,7 @@ export function S6B() {
   )
 }
 
-// ── Variant C: Minimal dark ────────────────────────────────────────────────
+// ── Variant C: Minimal dark (no NavBar — full-focus mode) ─────────────────
 
 export function S6C() {
   const [narrating, setNarrating] = useState(false)
@@ -228,7 +221,7 @@ export function S6C() {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '12px 18px 16px',
+        padding: '12px 18px 24px',
       }}
     >
       {/* Top row */}
@@ -244,16 +237,7 @@ export function S6C() {
               <div
                 key={k}
                 onClick={() => setMode(MODES[i])}
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 18,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: active ? colors.teal : 'transparent',
-                  cursor: 'pointer',
-                }}
+                style={{ width: 26, height: 26, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', background: active ? colors.teal : 'transparent', cursor: 'pointer' }}
               >
                 <span style={{ fontSize: 10, fontWeight: 600, color: active ? colors.mist : colors.bark }}>{k}</span>
               </div>
@@ -264,20 +248,18 @@ export function S6C() {
 
       {/* Center gem */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
-        <div style={{ width: 14, height: 14, background: colors.teal, transform: 'rotate(45deg)', borderRadius: 3 }} />
+        <DiamondMarker size={14} color={colors.teal} style={{ borderRadius: 3 }} />
         <div style={{ fontSize: 24, fontWeight: 700, color: colors.mist, lineHeight: 1.1 }}>Bach Ma Temple</div>
         <div style={{ fontSize: 12, color: colors.bark }}>Est. 1010 · Temple district</div>
         <NarrativeToggle active={narrating} onToggle={() => setNarrating((p) => !p)} dark />
       </div>
 
       {/* Approach pill */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ background: colors.gold, borderRadius: 20, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 8, height: 8, background: colors.leaf, transform: 'rotate(45deg)', borderRadius: 1 }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: colors.leaf }}>Hàng Bạc approaching</div>
-            <div style={{ fontSize: 10, color: 'rgba(28,39,32,0.65)' }}>120m · narrative will auto-start</div>
-          </div>
+      <div style={{ background: colors.gold, borderRadius: 20, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <DiamondMarker size={8} color={colors.leaf} style={{ borderRadius: 1 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: colors.leaf, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Hàng Bạc approaching</div>
+          <div style={{ fontSize: 10, color: 'rgba(28,39,32,0.65)' }}>120m · narrative will auto-start</div>
         </div>
       </div>
     </div>

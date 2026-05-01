@@ -309,36 +309,36 @@ Sidebar groups in the showcase: **Onboarding** / **Walking** / **Discovery** / *
 ## Implementation Order
 
 ### Round 1 — Fixes (unblock everything else)
-- [ ] FIX 1: `nav-bar.tsx` — `NAV_HEIGHT` export + drop-shadow
-- [ ] FIX 2: `bottom-sheet.tsx` — `bottomOffset` prop
-- [ ] FIX 3: `map-placeholder.tsx` — `h='auto'` support
-- [ ] FIX 4: `screen1.tsx` — remove S1C, fix WithNav padding
-- [ ] FIX 5: `screen2.tsx` — cut S2B last answer block, text overflow
-- [ ] FIX 6: `screen3.tsx` — NavBar container fix
-- [ ] FIX 7: `screen4.tsx` — copy fix ("radius" not "to walk all")
-- [ ] FIX 8: `page.tsx` — responsive maxHeight
-- [ ] FIX 9: all screens — DiamondMarker consistency
-- [ ] Run `turbo check-types` — must be 0 errors
+- [x] FIX 1: `nav-bar.tsx` — `NAV_HEIGHT` export + drop-shadow
+- [x] FIX 2: `bottom-sheet.tsx` — `bottomOffset` prop
+- [x] FIX 3: `map-placeholder.tsx` — `h='auto'` support
+- [x] FIX 4: `screen1.tsx` — remove S1C, fix WithNav padding
+- [x] FIX 5: `screen2.tsx` — cut S2B last answer block, text overflow
+- [x] FIX 6: `screen3.tsx` — NavBar container fix
+- [x] FIX 7: `screen4.tsx` — copy fix ("radius" not "to walk all")
+- [x] FIX 8: `page.tsx` — responsive maxHeight
+- [x] FIX 9: all screens — DiamondMarker consistency
+- [x] Run `turbo check-types` — must be 0 errors
 
 ### Round 2 — New screens
-- [ ] `screen-splash.tsx` — 1 variant
-- [ ] `screen-perms.tsx` — 2 variants (A: requesting, B: granted)
-- [ ] `screen-profile.tsx` — 1 screen, 3 interactive tabs
+- [x] `screen-splash.tsx` — 1 variant
+- [x] `screen-perms.tsx` — 2 variants (A: requesting, B: granted)
+- [x] `screen-profile.tsx` — 1 screen, 3 interactive tabs
 
 ### Round 3 — Integrate
-- [ ] Register all new screens in `page.tsx` SCREENS array
-- [ ] Update sidebar grouping: Onboarding / Walking / Discovery / Voice / Profile
-- [ ] Remove S1C from sidebar
-- [ ] Verify all 17 variants render without TypeScript errors
+- [x] Register all new screens in `page.tsx` SCREENS array
+- [x] Update sidebar grouping: Onboarding / Walking / Discovery / Voice / Profile
+- [x] Remove S1C from sidebar
+- [x] Verify all 17 variants render without TypeScript errors
 
 ---
 
 ## Quality Gate (per screen)
 
-- [ ] Zero TypeScript errors
-- [ ] No inline hex values (all from `tokens.ts`)
-- [ ] No inline `rotate(45deg)` diamonds (all use `DiamondMarker`)
-- [ ] NavBar screens: `paddingBottom: NAV_HEIGHT` applied to scrollable content
-- [ ] BottomSheet screens: `bottomOffset={NAV_HEIGHT}` passed where NavBar is present
-- [ ] Single-line text: `overflow: hidden, textOverflow: ellipsis, whiteSpace: nowrap`
-- [ ] Multi-line text caps: `WebkitLineClamp` applied
+- [x] Zero TypeScript errors
+- [x] No inline hex values (all from `tokens.ts`)
+- [x] No inline `rotate(45deg)` diamonds (all use `DiamondMarker`)
+- [x] NavBar screens: `paddingBottom: NAV_HEIGHT` applied to scrollable content
+- [x] BottomSheet screens: `bottomOffset={NAV_HEIGHT}` passed where NavBar is present
+- [x] Single-line text: `overflow: hidden, textOverflow: ellipsis, whiteSpace: nowrap`
+- [x] Multi-line text caps: `WebkitLineClamp` applied

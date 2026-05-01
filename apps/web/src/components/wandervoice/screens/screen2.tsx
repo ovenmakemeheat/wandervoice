@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import { colors, borders } from '../tokens'
 import { Waveform } from '../primitives/waveform'
-import { NavBar } from '../primitives/nav-bar'
-import { BackIcon, CloseIcon, ChevronIcon, MicIcon, PlayIcon, PauseIcon } from '../icons'
+import { BackIcon, CloseIcon, ChevronIcon, MicIcon, PauseIcon } from '../icons'
 
 // ── Variant A: Full-screen immersive mic ──────────────────────────────────
 
@@ -53,7 +52,20 @@ export function S2A() {
         </div>
         <span style={{ fontSize: 13, color: colors.bark }}>{listening ? 'Listening…' : 'Tap to ask'}</span>
         {listening && (
-          <p style={{ fontSize: 14, color: colors.mist, textAlign: 'center', maxWidth: 220, lineHeight: 1.55, margin: 0 }}>
+          <p
+            style={{
+              fontSize: 14,
+              color: colors.mist,
+              textAlign: 'center',
+              maxWidth: 220,
+              lineHeight: 1.55,
+              margin: 0,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
             "Who built this street and what did they sell?"
           </p>
         )}
@@ -102,11 +114,11 @@ export function S2A() {
   )
 }
 
-// ── Variant B: Suggestions + last answer ─────────────────────────────────
+// ── Variant B: Suggestions (last answer removed — duplicates History tab) ─
 
 export function S2B() {
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', background: colors.mist, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ width: '100%', height: '100%', background: colors.mist, display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div style={{ padding: '8px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: borders.border }}>
         <BackIcon size={18} color={colors.bark} />
@@ -117,17 +129,34 @@ export function S2B() {
       {/* Context banner */}
       <div style={{ margin: '8px 12px', background: colors.teal, borderRadius: 10, padding: '10px 14px' }}>
         <div style={{ fontSize: 10, color: 'rgba(245,247,242,0.65)', marginBottom: 2 }}>ASKING ABOUT</div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: colors.mist }}>Hàng Bạc Silver Street · Story</div>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: colors.mist,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          Hàng Bạc Silver Street · Story
+        </div>
       </div>
 
       {/* Suggested questions */}
-      <div style={{ padding: '0 12px 6px' }}>
-        <div style={{ fontSize: 10, fontWeight: 500, color: colors.bark, letterSpacing: 1, marginBottom: 6 }}>SUGGESTED</div>
-        {['What was sold here 100 years ago?', 'Who lives above these shophouses?', 'Is the guild still active?'].map((q) => (
+      <div style={{ flex: 1, padding: '0 12px', overflowY: 'auto' }}>
+        <div style={{ fontSize: 10, fontWeight: 500, color: colors.bark, letterSpacing: 1, marginBottom: 8, marginTop: 4 }}>SUGGESTED</div>
+        {[
+          'What was sold here 100 years ago?',
+          'Who lives above these shophouses?',
+          'Is the guild still active?',
+          'What happened here during the war?',
+          'Why is the street called Silver Street?',
+        ].map((q) => (
           <div
             key={q}
             style={{
-              padding: '8px 12px',
+              padding: '10px 12px',
               border: borders.border,
               borderRadius: 8,
               marginBottom: 6,
@@ -136,31 +165,24 @@ export function S2B() {
               justifyContent: 'space-between',
               alignItems: 'center',
               cursor: 'pointer',
+              gap: 8,
             }}
           >
-            <span style={{ fontSize: 12, color: colors.leaf }}>{q}</span>
+            <span
+              style={{
+                fontSize: 12,
+                color: colors.leaf,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                flex: 1,
+              }}
+            >
+              {q}
+            </span>
             <ChevronIcon size={16} color={colors.teal} />
           </div>
         ))}
-      </div>
-
-      <div style={{ height: 1, background: 'rgba(28,39,32,0.12)', margin: '8px 0' }} />
-
-      {/* Last answer */}
-      <div style={{ flex: 1, padding: '6px 12px' }}>
-        <div style={{ fontSize: 10, fontWeight: 500, color: colors.bark, letterSpacing: 1, marginBottom: 6 }}>LAST ANSWER</div>
-        <div style={{ background: colors.mistBg, borderRadius: 10, padding: '10px 12px', border: borders.border }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-            <div style={{ width: 24, height: 24, borderRadius: '50%', background: colors.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <PlayIcon size={12} color={colors.mist} />
-            </div>
-            <Waveform color={colors.teal} n={16} h={18} active={false} />
-            <span style={{ fontSize: 11, color: colors.bark }}>0:48</span>
-          </div>
-          <p style={{ fontSize: 12, color: colors.bark, lineHeight: 1.55, margin: 0 }}>
-            The street was founded in 1428 by silversmiths from Châu Khê village…
-          </p>
-        </div>
       </div>
 
       {/* Input bar */}
@@ -168,12 +190,10 @@ export function S2B() {
         <div style={{ flex: 1, background: colors.mistBg, borderRadius: 24, padding: '10px 16px', border: borders.border }}>
           <span style={{ fontSize: 12, color: colors.bark }}>Ask anything about this place…</span>
         </div>
-        <div style={{ width: 40, height: 40, borderRadius: '50%', background: colors.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', background: colors.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <MicIcon size={18} color={colors.mist} />
         </div>
       </div>
-
-      <NavBar active={0} />
     </div>
   )
 }
@@ -192,14 +212,12 @@ export function S2C() {
 
       {/* Messages */}
       <div style={{ flex: 1, padding: '8px 14px', display: 'flex', flexDirection: 'column', gap: 10, overflowY: 'auto' }}>
-        {/* User message */}
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ background: 'rgba(42,117,96,0.28)', borderRadius: '12px 12px 3px 12px', padding: '8px 12px', maxWidth: '75%' }}>
             <p style={{ fontSize: 12, color: colors.mist, lineHeight: 1.5, margin: 0 }}>Who built this street?</p>
           </div>
         </div>
 
-        {/* AI response */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
           <div style={{ width: 24, height: 24, borderRadius: '50%', background: colors.teal, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: colors.mist }}>W</span>
@@ -209,20 +227,29 @@ export function S2C() {
               <Waveform color={colors.teal} n={10} h={14} active={false} />
               <span style={{ fontSize: 10, color: colors.bark }}>0:48</span>
             </div>
-            <p style={{ fontSize: 12, color: 'rgba(245,247,242,0.8)', lineHeight: 1.5, margin: 0 }}>
+            <p
+              style={{
+                fontSize: 12,
+                color: 'rgba(245,247,242,0.8)',
+                lineHeight: 1.5,
+                margin: 0,
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 4,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
               Silversmiths from Châu Khê village, established 1428 under the Lê dynasty guild system…
             </p>
           </div>
         </div>
 
-        {/* User message 2 */}
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ background: 'rgba(42,117,96,0.28)', borderRadius: '12px 12px 3px 12px', padding: '8px 12px', maxWidth: '75%' }}>
             <p style={{ fontSize: 12, color: colors.mist, lineHeight: 1.5, margin: 0 }}>Still active today?</p>
           </div>
         </div>
 
-        {/* AI generating */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
           <div style={{ width: 24, height: 24, borderRadius: '50%', background: colors.teal, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ fontSize: 10, fontWeight: 700, color: colors.mist }}>W</span>
@@ -241,7 +268,7 @@ export function S2C() {
         <div style={{ flex: 1, background: 'rgba(245,247,242,0.07)', borderRadius: 24, padding: '10px 14px', border: borders.borderD }}>
           <span style={{ fontSize: 12, color: colors.bark }}>Continue asking…</span>
         </div>
-        <div style={{ width: 40, height: 40, borderRadius: '50%', background: colors.teal, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', background: colors.teal, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <MicIcon size={18} color={colors.mist} />
         </div>
       </div>

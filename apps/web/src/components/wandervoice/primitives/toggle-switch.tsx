@@ -8,7 +8,7 @@ const TogglePropsSchema = z.object({
   dark: z.boolean().default(false),
 })
 
-type ToggleProps = z.infer<typeof TogglePropsSchema> & {
+type ToggleProps = z.input<typeof TogglePropsSchema> & {
   onToggle: () => void
 }
 

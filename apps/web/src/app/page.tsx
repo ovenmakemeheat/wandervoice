@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import { colors } from '@/components/wandervoice/tokens'
-import { S1A, S1B, S1C } from '@/components/wandervoice/screens/screen1'
+import { S1A, S1B } from '@/components/wandervoice/screens/screen1'
 import { S2A, S2B, S2C } from '@/components/wandervoice/screens/screen2'
 import { S3A } from '@/components/wandervoice/screens/screen3'
 import { S4A } from '@/components/wandervoice/screens/screen4'
@@ -10,6 +10,9 @@ import { S5A } from '@/components/wandervoice/screens/screen5'
 import { S6A, S6B, S6C } from '@/components/wandervoice/screens/screen6'
 import { S7A } from '@/components/wandervoice/screens/screen7'
 import { S8A } from '@/components/wandervoice/screens/screen8'
+import { ScreenSplash } from '@/components/wandervoice/screens/screen-splash'
+import { ScreenPermsA, ScreenPermsB } from '@/components/wandervoice/screens/screen-perms'
+import { ScreenProfile } from '@/components/wandervoice/screens/screen-profile'
 
 // ── Screen registry ────────────────────────────────────────────────────────
 
@@ -28,50 +31,36 @@ interface ScreenGroup {
 }
 
 const SCREENS: ScreenGroup[] = [
+  // Onboarding
   {
-    id: 's1',
-    title: 'Main Map + Audio Guide',
-    short: 'Map',
-    variants: [
-      { id: 's1a', label: 'Light · content-first', theme: 'light', component: <S1A /> },
-      { id: 's1b', label: 'Dark · Strava metrics', theme: 'dark', component: <S1B /> },
-      { id: 's1c', label: 'Light · approach-first', theme: 'light', component: <S1C /> },
-    ],
+    id: 'splash',
+    title: 'Splash',
+    short: 'Splash',
+    variants: [{ id: 'splash', label: 'Dark · canopy', theme: 'dark', component: <ScreenSplash /> }],
   },
   {
-    id: 's2',
-    title: 'Voice Input',
-    short: 'Voice',
+    id: 'perms',
+    title: 'Permissions',
+    short: 'Perms',
     variants: [
-      { id: 's2a', label: 'Dark · full-screen mic', theme: 'dark', component: <S2A /> },
-      { id: 's2b', label: 'Light · suggestions', theme: 'light', component: <S2B /> },
-      { id: 's2c', label: 'Dark · chat', theme: 'dark', component: <S2C /> },
-    ],
-  },
-  {
-    id: 's3',
-    title: 'POI Detail',
-    short: 'Detail',
-    variants: [
-      { id: 's3a', label: 'Light · info + tabs', theme: 'light', component: <S3A /> },
-    ],
-  },
-  {
-    id: 's4',
-    title: 'Gem Discovery',
-    short: 'Gems',
-    variants: [
-      { id: 's4a', label: 'Light · map + list', theme: 'light', component: <S4A /> },
+      { id: 'perms-a', label: 'Dark · requesting', theme: 'dark', component: <ScreenPermsA /> },
+      { id: 'perms-b', label: 'Dark · granted', theme: 'dark', component: <ScreenPermsB /> },
     ],
   },
   {
     id: 's5',
-    title: 'Onboarding: Style',
+    title: 'Narrative Style',
     short: 'Style',
-    variants: [
-      { id: 's5a', label: 'Dark · mode selection', theme: 'dark', component: <S5A /> },
-    ],
+    variants: [{ id: 's5a', label: 'Dark · mode selection', theme: 'dark', component: <S5A /> }],
   },
+  {
+    id: 's7',
+    title: 'Walking Setup',
+    short: 'Setup',
+    variants: [{ id: 's7a', label: 'Dark · toggles + AI notice', theme: 'dark', component: <S7A /> }],
+  },
+
+  // Walking
   {
     id: 's6',
     title: 'Walking Mode',
@@ -83,20 +72,53 @@ const SCREENS: ScreenGroup[] = [
     ],
   },
   {
-    id: 's7',
-    title: 'Onboarding: Setup',
-    short: 'Setup',
-    variants: [
-      { id: 's7a', label: 'Dark · toggles + AI notice', theme: 'dark', component: <S7A /> },
-    ],
-  },
-  {
     id: 's8',
     title: 'Sub-Place Selection',
     short: 'Place',
+    variants: [{ id: 's8a', label: 'Light · campus places', theme: 'light', component: <S8A /> }],
+  },
+  {
+    id: 's1',
+    title: 'Main Map · Walking',
+    short: 'Map',
     variants: [
-      { id: 's8a', label: 'Light · campus places', theme: 'light', component: <S8A /> },
+      { id: 's1a', label: 'Light · content-first', theme: 'light', component: <S1A /> },
+      { id: 's1b', label: 'Dark · Strava metrics', theme: 'dark', component: <S1B /> },
     ],
+  },
+
+  // Discovery
+  {
+    id: 's3',
+    title: 'POI Detail',
+    short: 'POI',
+    variants: [{ id: 's3a', label: 'Light · info + tabs', theme: 'light', component: <S3A /> }],
+  },
+  {
+    id: 's4',
+    title: 'Gem Discovery',
+    short: 'Gems',
+    variants: [{ id: 's4a', label: 'Light · map + list', theme: 'light', component: <S4A /> }],
+  },
+
+  // Voice
+  {
+    id: 's2',
+    title: 'Voice Input',
+    short: 'Voice',
+    variants: [
+      { id: 's2a', label: 'Dark · mic', theme: 'dark', component: <S2A /> },
+      { id: 's2b', label: 'Light · suggestions', theme: 'light', component: <S2B /> },
+      { id: 's2c', label: 'Dark · chat', theme: 'dark', component: <S2C /> },
+    ],
+  },
+
+  // Profile
+  {
+    id: 'profile',
+    title: 'Profile',
+    short: 'Profile',
+    variants: [{ id: 'profile-a', label: 'Light · mist', theme: 'light', component: <ScreenProfile /> }],
   },
 ]
 
@@ -293,7 +315,7 @@ function ScreenViewport({ variant }: { variant: ScreenVariant }) {
           width: '100%',
           height: '100%',
           maxWidth: 430,
-          maxHeight: 932,
+          maxHeight: 'min(932px, 100dvh)',
           display: 'flex',
           flexDirection: 'column',
           background: bg,
@@ -449,7 +471,7 @@ function VariantBar({
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [activeId, setActiveId] = useState('s1a')
+  const [activeId, setActiveId] = useState('splash')
 
   // Resolve active variant + group
   const activeGroup = SCREENS.find((g) => g.variants.some((v) => v.id === activeId))!

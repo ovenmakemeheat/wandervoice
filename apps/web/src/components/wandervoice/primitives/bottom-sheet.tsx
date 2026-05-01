@@ -13,7 +13,7 @@ const BottomSheetPropsSchema = z.object({
   bottomOffset: z.number().default(0),
 })
 
-type BottomSheetProps = z.infer<typeof BottomSheetPropsSchema>
+type BottomSheetProps = z.input<typeof BottomSheetPropsSchema>
 
 const TAB_LABELS = ['Info', 'Narrative', 'History']
 

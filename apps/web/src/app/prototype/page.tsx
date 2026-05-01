@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import { colors } from '@/components/wandervoice/tokens'
+import { AppProvider } from '@/components/wandervoice/context/app-context'
 import { S2A, S2B, S2C } from '@/components/wandervoice/screens/screen2'
 import { S5A } from '@/components/wandervoice/screens/screen5'
 import { S7A } from '@/components/wandervoice/screens/screen7'
@@ -311,7 +312,9 @@ function ScreenViewport({ variant }: { variant: ScreenVariant }) {
           borderRadius: 'clamp(0px, calc((100vw - 430px) * 999), 28px)',
         }}
       >
-        {variant.component}
+        <AppProvider>
+          {variant.component}
+        </AppProvider>
       </div>
     </div>
   )

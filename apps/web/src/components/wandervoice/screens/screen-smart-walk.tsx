@@ -7,7 +7,8 @@ import { MetricStrip } from '../primitives/metric-strip'
 import { BottomSheet } from '../primitives/bottom-sheet'
 import { NavBar, NAV_HEIGHT } from '../primitives/nav-bar'
 import { DiamondMarker, PlayIcon, PauseIcon } from '../icons'
-import { useAppContext } from '../context/app-context'
+import { useAppContext, type NarratorPhase } from '../context/app-context'
+import { useAutoNarrator } from '../hooks/use-auto-narrator'
 
 const NAV_SCREENS = ['home', 'smart-walk', 'voice-ask', 'profile'] as const
 
@@ -26,21 +27,30 @@ function StatusBar({ dark = false }: { dark?: boolean }) {
 
 const WAVEFORM_HEIGHTS = [5, 10, 18, 14, 22, 18, 12, 20, 22, 16, 10, 18, 14, 8]
 
-function FloatingNarrativeButton({ 
-  active, 
-  onToggle, 
-  onAskTap, 
+const PHASE_HINT: Partial<Record<NarratorPhase, string>> = {
+  'generating-text': 'Writing…',
+  'generating-audio': 'Synthesizing…',
+  'playing': 'Speaking…',
+}
+
+function FloatingNarrativeButton({
+  active,
+  phase,
+  onToggle,
+  onAskTap,
   centered = false,
   transparent = false
-}: { 
-  active: boolean; 
-  onToggle: () => void; 
+}: {
+  active: boolean;
+  phase: NarratorPhase;
+  onToggle: () => void;
   onAskTap?: () => void;
   centered?: boolean;
   transparent?: boolean;
 }) {
   const { theme } = useAppContext()
   const isDark = theme === 'dark'
+  const isBusy = active && phase !== 'idle' && phase !== 'playing'
   
   return (
     <div
@@ -72,31 +82,59 @@ function FloatingNarrativeButton({
         margin: centered ? '20px 0' : 0,
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: centered ? 6 : 3, height: centered ? 60 : 22 }}>
-        {active ? (
-          WAVEFORM_HEIGHTS.map((v, i) => (
-            <div
-              key={i}
-              style={{
-                width: centered ? 6 : 2.5,
-                height: centered ? v * 2.5 : v,
-                background: isDark ? colors.mist : colors.leaf,
-                borderRadius: 2,
-                opacity: 0.6 + (v / 22) * 0.4,
-                transition: 'height 0.2s',
-                animation: active ? 'wavePulse 1.2s infinite ease-in-out' : 'none',
-                animationDelay: `${i * 0.1}s`,
-              }}
-            />
-          ))
-        ) : (
-          <PlayIcon size={centered ? 48 : 24} color={isDark ? colors.mist : colors.leaf} style={{ marginLeft: centered ? 8 : 4 }} />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: centered ? 6 : 3, height: centered ? 60 : 22 }}>
+          {active ? (
+            isBusy ? (
+              // Show spinner dots while generating text/audio
+              [0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  style={{
+                    width: centered ? 10 : 5,
+                    height: centered ? 10 : 5,
+                    borderRadius: '50%',
+                    background: isDark ? colors.mist : colors.leaf,
+                    opacity: 0.7,
+                    animation: `bounce 1s ${i * 0.15}s infinite`,
+                  }}
+                />
+              ))
+            ) : (
+              WAVEFORM_HEIGHTS.map((v, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: centered ? 6 : 2.5,
+                    height: centered ? v * 2.5 : v,
+                    background: isDark ? colors.mist : colors.leaf,
+                    borderRadius: 2,
+                    opacity: 0.6 + (v / 22) * 0.4,
+                    transition: 'height 0.2s',
+                    animation: 'wavePulse 1.2s infinite ease-in-out',
+                    animationDelay: `${i * 0.1}s`,
+                  }}
+                />
+              ))
+            )
+          ) : (
+            <PlayIcon size={centered ? 48 : 24} color={isDark ? colors.mist : colors.leaf} style={{ marginLeft: centered ? 8 : 4 }} />
+          )}
+        </div>
+        {active && isBusy && (
+          <span style={{ fontSize: centered ? 10 : 8, color: isDark ? colors.mist : colors.leaf, opacity: 0.7, letterSpacing: 0.5 }}>
+            {PHASE_HINT[phase] ?? '…'}
+          </span>
         )}
       </div>
       <style>{`
         @keyframes wavePulse {
           0%, 100% { transform: scaleY(0.8); }
           50% { transform: scaleY(1.2); }
+        }
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
         }
         @keyframes marquee {
           0% { transform: translateX(20%); opacity: 0; }
@@ -110,9 +148,8 @@ function FloatingNarrativeButton({
 }
 
 function LockView({ onUnlock }: { onUnlock: () => void }) {
-  const { theme, nearestPOI } = useAppContext()
+  const { theme, nearestPOI, autoNarrate, setAutoNarrate, narratorPhase } = useAppContext()
   const isDark = theme === 'dark'
-  const [narrating, setNarrating] = useState(true)
   const MODES = ['Story', 'Facts', 'Secrets']
   const KEYS = ['S', 'F', 'X']
   const [mode, setMode] = useState('Story')
@@ -171,7 +208,7 @@ function LockView({ onUnlock }: { onUnlock: () => void }) {
       </div>
 
       {/* Narrative button is now a relative wave below the text */}
-      <FloatingNarrativeButton active={narrating} onToggle={() => setNarrating(p => !p)} centered transparent />
+      <FloatingNarrativeButton active={autoNarrate} phase={narratorPhase} onToggle={() => setAutoNarrate(!autoNarrate)} centered transparent />
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
         <div style={{ background: colors.gold, borderRadius: 20, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
@@ -290,10 +327,12 @@ function POIPanel() {
 }
 
 function ActiveMergedView() {
-  const { navigate, theme } = useAppContext()
-  const [narrating, setNarrating] = useState(true)
+  const { navigate, theme, autoNarrate, setAutoNarrate, narratorPhase } = useAppContext()
   const isDark = theme === 'dark'
   const bg = isDark ? colors.leaf : colors.mistBg
+
+  // Mount the auto-narrator loop here so it lives with the walk screen
+  useAutoNarrator()
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', background: bg, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'background 0.4s ease' }}>
@@ -302,15 +341,16 @@ function ActiveMergedView() {
         <MapPlaceholder h="auto" dark={isDark} />
       </div>
 
-      <BottomSheet dark={isDark} defaultTab={1} bottomOffset={NAV_HEIGHT}>
+      <BottomSheet dark={isDark} defaultTab={2} bottomOffset={NAV_HEIGHT}>
         <MetricStrip dark={isDark} />
         <POIPanel />
       </BottomSheet>
 
       <NavBar active={1} onNavigate={(t) => navigate(NAV_SCREENS[t])} />
       <FloatingNarrativeButton
-        active={narrating}
-        onToggle={() => setNarrating(p => !p)}
+        active={autoNarrate}
+        phase={narratorPhase}
+        onToggle={() => setAutoNarrate(!autoNarrate)}
         onAskTap={() => navigate('voice-ask')}
         transparent
       />

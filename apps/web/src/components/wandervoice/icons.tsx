@@ -134,6 +134,13 @@ export const MapPinIcon = (p: IconProps) => (
   />
 )
 
+export const SearchIcon = (p: IconProps) => (
+  <Icon
+    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+    {...p}
+  />
+)
+
 // Diamond / Gem marker used on map and lists
 export const DiamondMarker = ({
   size = 10,

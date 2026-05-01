@@ -13,6 +13,7 @@ import { ScreenSmartWalk } from '@/components/wandervoice/screens/screen-smart-w
 import { ScreenHome } from '@/components/wandervoice/screens/screen-home'
 import { ScreenOnboardingName } from '@/components/wandervoice/screens/screen-onboarding-name'
 import { ScreenSignIn } from '@/components/wandervoice/screens/screen-sign-in'
+import { ScreenSubPlaceSelection } from '@/components/wandervoice/screens/screen-sub-place'
 
 // ── Screen map ────────────────────────────────────────────────────────────
 
@@ -29,6 +30,7 @@ const SCREEN_MAP: Record<ScreenName, ReactNode> = {
   'voice-listen': <S2A />,
   'voice-chat': <S2C />,
   'profile': <ScreenProfile />,
+  'sub-place-selection': <ScreenSubPlaceSelection />,
 }
 
 const DARK_SCREENS: ScreenName[] = [

@@ -6,17 +6,18 @@ import { colors, borders } from '../tokens'
 import { InfoTab } from '../tabs/info-tab'
 import { NarrativeTab } from '../tabs/narrative-tab'
 import { HistoryTab } from '../tabs/history-tab'
+import { PlaceTab } from '../tabs/place-tab'
 
 const BottomSheetPropsSchema = z.object({
   dark: z.boolean().default(false),
-  defaultTab: z.number().min(0).max(2).default(1),
+  defaultTab: z.number().min(0).max(3).default(1),
   bottomOffset: z.number().default(0),
   children: z.any().optional(),
 })
 
 type BottomSheetProps = z.input<typeof BottomSheetPropsSchema> & { children?: React.ReactNode }
 
-const TAB_LABELS = ['Info', 'Narrative', 'History']
+const TAB_LABELS = ['Info', 'Place', 'Narrative', 'History']
 
 export function BottomSheet({ dark = false, defaultTab = 1, bottomOffset = 0, children }: BottomSheetProps) {
   const [tab, setTab] = useState(defaultTab)
@@ -122,7 +123,7 @@ export function BottomSheet({ dark = false, defaultTab = 1, bottomOffset = 0, ch
               textAlign: 'center',
               cursor: 'pointer',
               background: tab === i ? activeBg : bg,
-              borderRight: i < 2 ? (dark ? borders.borderD : borders.border) : 'none',
+              borderRight: i < TAB_LABELS.length - 1 ? (dark ? borders.borderD : borders.border) : 'none',
             }}
           >
             <span
@@ -141,8 +142,9 @@ export function BottomSheet({ dark = false, defaultTab = 1, bottomOffset = 0, ch
       {/* Tab content — bottomOffset clears floating NavBar */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: bottomOffset + 20 }}>
         {tab === 0 && <InfoTab dark={dark} />}
-        {tab === 1 && <NarrativeTab dark={dark} />}
-        {tab === 2 && <HistoryTab dark={dark} />}
+        {tab === 1 && <PlaceTab dark={dark} />}
+        {tab === 2 && <NarrativeTab dark={dark} />}
+        {tab === 3 && <HistoryTab dark={dark} />}
       </div>
     </div>
   )

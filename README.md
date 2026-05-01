@@ -14,6 +14,8 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 - **PostgreSQL** - Database engine
 - **Turborepo** - Optimized monorepo build system
 
+For a detailed breakdown of the technical stack and user journey, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ## Getting Started
 
 First, install the dependencies:

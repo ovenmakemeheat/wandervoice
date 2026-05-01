@@ -3,41 +3,55 @@
 import { useState, useEffect } from 'react'
 import { colors, borders } from '../tokens'
 import { ModePills } from '../primitives/mode-pills'
-import { NarrativeToggle } from '../primitives/narrative-toggle'
 import { ChevronIcon } from '../icons'
+import { useAppContext } from '../context/app-context'
 
 interface NarrativeTabProps {
   dark?: boolean
 }
 
 const SUGGESTIONS = [
-  { label: 'Switch to Secrets?', reason: 'This street has hidden guild rituals' },
+  { label: 'Switch to Secrets?', reason: 'This area has hidden local stories' },
   { label: 'Try Facts mode', reason: 'Dates and measurements available' },
 ]
 
-const NARRATION_TEXT = "Hàng Bạc means Silver Street. Craftsmen from Châu Khê village set up workshops here in the 15th century, forging coins and jewelry for the royal court. Today, it remains the heart of Hanoi's jewelry trade, where the rhythmic sound of small hammers still echoes through the narrow shopfronts..."
-
 export function NarrativeTab({ dark = false }: NarrativeTabProps) {
+  const { nearestPOI } = useAppContext()
   const [narrating, setNarrating] = useState(true)
   const [mode, setMode] = useState<'Story' | 'Facts' | 'Secrets'>('Story')
   const [displayText, setDisplayText] = useState('')
   const [charIndex, setCharIndex] = useState(0)
 
+  const narrationText = nearestPOI 
+    ? `${nearestPOI.name} is a significant ${nearestPOI.type || 'landmark'} located in ${nearestPOI.address || 'the Hanoi Old Quarter'}. This place has witnessed centuries of transformation, from ancient guild rituals to the vibrant trade seen today. As you stand here, notice how the history of the district is etched into every detail...`
+    : "Searching for landmarks..."
+
   useEffect(() => {
-    if (!narrating) {
-      setDisplayText('')
-      setCharIndex(0)
+    setDisplayText('')
+    setCharIndex(0)
+  }, [nearestPOI?.name, mode])
+
+  useEffect(() => {
+    if (!narrating || !nearestPOI) {
       return
     }
 
-    if (charIndex < NARRATION_TEXT.length) {
+    if (charIndex < narrationText.length) {
       const timeout = setTimeout(() => {
-        setDisplayText(prev => prev + NARRATION_TEXT[charIndex])
+        setDisplayText(prev => prev + narrationText[charIndex])
         setCharIndex(prev => prev + 1)
       }, 30)
       return () => clearTimeout(timeout)
     }
-  }, [charIndex, narrating])
+  }, [charIndex, narrating, narrationText, nearestPOI])
+
+  if (!nearestPOI) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center', color: colors.bark, fontSize: 13 }}>
+        Waiting for landmark story...
+      </div>
+    )
+  }
 
   return (
     <div
@@ -52,10 +66,10 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 600, color: dark ? colors.mist : colors.leaf }}>
-            Hàng Bạc Silver Street
+            {nearestPOI.name}
           </div>
           <div style={{ fontSize: 11, color: colors.bark, marginTop: 2 }}>
-            Est. 1428 · Jewellery guild
+            {nearestPOI.type || 'Landmark'} · {nearestPOI.address || 'Hanoi'}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: colors.bark }}>
@@ -98,7 +112,7 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
         }}>
           {displayText}
           <span style={{ 
-            display: narrating && charIndex < NARRATION_TEXT.length ? 'inline-block' : 'none',
+            display: narrating && charIndex < narrationText.length ? 'inline-block' : 'none',
             width: 2,
             height: 14,
             background: colors.teal,

@@ -1,8 +1,7 @@
-'use client'
-
 import { z } from 'zod'
 import { colors } from '../tokens'
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { useAppContext } from '../context/app-context'
 
 const MapPropsSchema = z.object({
   dark: z.boolean().default(false),
@@ -16,6 +15,10 @@ interface POI {
   lat: number
   lng: number
   name: string
+  imageUrl?: string
+  type?: string
+  address?: string
+  tags?: Record<string, string>
 }
 
 interface Road {
@@ -25,6 +28,7 @@ interface Road {
 
 export function MapPlaceholder(rawProps: Partial<MapProps>) {
   const { dark, h, gems } = MapPropsSchema.parse(rawProps)
+  const { setNearestPOI, setNearbyPOIs } = useAppContext()
 
   const bg = dark ? '#1A2820' : '#C4D4C0'
   const gridLine = dark ? 'rgba(245,247,242,0.08)' : 'rgba(28,39,32,0.10)'
@@ -83,50 +87,135 @@ export function MapPlaceholder(rawProps: Partial<MapProps>) {
 
   const fetchMapData = async (loc: { lat: number; lng: number }) => {
     setLoading(true)
+    setNearestPOI(null) // Signal "Fetching" state for skeleton UI
+
     try {
-      // Overpass API query for nearby attractions, historic spots, AND roads (highways)
-      // We use [out:json] and out geom to get coordinates for ways
-      const query = `
-        [out:json][timeout:25];
-        (
-          node["tourism"~"attraction|museum|viewpoint|gallery"](around:1000,${loc.lat},${loc.lng});
-          node["historic"](around:1000,${loc.lat},${loc.lng});
-          way["highway"~"primary|secondary|tertiary|residential|footway"](around:1000,${loc.lat},${loc.lng});
-        );
-        out geom 100;
-      `
-
-      const res = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        body: query,
-      })
-
+      // Broader query to ensure we get SOMETHING
+      const query = `[out:json][timeout:25];(node["tourism"~"attraction|museum|viewpoint|gallery|hotel|place"](around:2000,${loc.lat},${loc.lng});node["historic"](around:2000,${loc.lat},${loc.lng});way["highway"~"primary|secondary|tertiary|residential|footway"](around:2000,${loc.lat},${loc.lng}););out body geom 100;`
+      
+      const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`
+      console.log('Overpass Request:', url)
+      
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`Overpass status: ${res.status}`)
+      
       const data = await res.json()
+      console.log('Overpass Data received:', data)
 
-      if (data && data.elements) {
+      if (data && data.elements && data.elements.length > 0) {
         const fetchedPois: POI[] = []
         const fetchedRoads: Road[] = []
+        const namedWays: { name: string; lat: number; lng: number }[] = []
+        const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+          const R = 6371e3 // metres
+          const φ1 = (lat1 * Math.PI) / 180
+          const φ2 = (lat2 * Math.PI) / 180
+          const Δφ = ((lat2 - lat1) * Math.PI) / 180
+          const Δλ = ((lon2 - lon1) * Math.PI) / 180
+          const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2)
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+          return R * c
+        }
 
         data.elements.forEach((e: any) => {
           if (e.type === 'node' && e.tags && (e.tags.name || e.tags['name:en'])) {
+            const name = e.tags['name:en'] || e.tags.name
+            const type = e.tags.tourism || e.tags.historic || e.tags.amenity || 'Landmark'
+            
+            const street = e.tags['addr:street'] || ''
+            const house = e.tags['addr:housenumber'] || ''
+            const city = e.tags['addr:city'] || ''
+            const address = [house, street, city].filter(v => v.trim()).join(', ')
+            
             fetchedPois.push({
               lat: e.lat,
               lng: e.lon,
-              name: e.tags['name:en'] || e.tags.name,
+              name: name,
+              type: type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' '),
+              address: address || undefined,
+              tags: e.tags,
+              distance: getDistance(loc.lat, loc.lng, e.lat, e.lon),
+              imageUrl: `https://loremflickr.com/300/300/landmark,vietnam,${encodeURIComponent(name.split(' ')[0])}?lock=${e.id % 100}`
             })
           } else if (e.type === 'way' && e.geometry) {
-            fetchedRoads.push({
-              id: e.id,
-              points: e.geometry.map((p: any) => ({ lat: p.lat, lng: p.lon })),
-            })
+            const roadPoints = e.geometry.map((p: any) => ({ lat: p.lat, lng: p.lon }))
+            fetchedRoads.push({ id: e.id, points: roadPoints })
+
+            if (e.tags && (e.tags.name || e.tags['name:en'])) {
+              const name = e.tags['name:en'] || e.tags.name
+              const avgLat = roadPoints.reduce((acc: number, p: any) => acc + p.lat, 0) / roadPoints.length
+              const avgLng = roadPoints.reduce((acc: number, p: any) => acc + p.lng, 0) / roadPoints.length
+              
+              namedWays.push({ name, lat: avgLat, lng: avgLng })
+              
+              if (e.tags.highway === 'secondary' || e.tags.highway === 'primary' || e.tags.highway === 'tertiary') {
+                fetchedPois.push({
+                  lat: avgLat,
+                  lng: avgLng,
+                  name: name,
+                  type: 'Road',
+                  address: e.tags.highway.charAt(0).toUpperCase() + e.tags.highway.slice(1) + ' Road',
+                  tags: e.tags,
+                  distance: getDistance(loc.lat, loc.lng, avgLat, avgLng),
+                  imageUrl: `https://loremflickr.com/300/300/street,road?lock=${e.id % 100}`
+                })
+              }
+            }
           }
         })
 
-        setPois(fetchedPois.slice(0, 15))
+        // Enrichment
+        fetchedPois.forEach(poi => {
+          if (!poi.address && namedWays.length > 0) {
+            let minD = Infinity
+            let nearestRoad = ''
+            namedWays.forEach(rw => {
+              const d = Math.pow(poi.lat - rw.lat, 2) + Math.pow(poi.lng - rw.lng, 2)
+              if (d < minD) {
+                minD = d
+                nearestRoad = rw.name
+              }
+            })
+            if (nearestRoad) poi.address = `Near ${nearestRoad}`
+          }
+        })
+
+        if (fetchedPois.length > 0) {
+          const sorted = [...fetchedPois].sort((a, b) => (a.distance || 0) - (b.distance || 0))
+
+          setPois(sorted.slice(0, 20))
+          setNearbyPOIs(sorted.slice(0, 15))
+          
+          const THRESHOLD = 150 // 150 meters
+          const nearestNode = sorted.find(p => p.type !== 'Road')
+          const nearestAny = sorted[0]
+          
+          if (nearestNode) {
+            if ((nearestNode.distance || 0) > THRESHOLD && nearestAny.type === 'Road') {
+              setNearestPOI(nearestAny)
+            } else {
+              setNearestPOI(nearestNode)
+            }
+          } else {
+            setNearestPOI(nearestAny)
+          }
+        } else {
+          setNearestPOI({ lat: loc.lat, lng: loc.lng, name: 'N/A', type: 'Unknown', distance: 0 })
+          setNearbyPOIs([])
+        }
         setRoads(fetchedRoads)
+      } else {
+        setNearestPOI({ lat: loc.lat, lng: loc.lng, name: 'N/A', type: 'Unknown', distance: 0 })
+        setNearbyPOIs([])
       }
     } catch (err) {
-      console.warn('Failed to load map data from OpenStreetMap', err)
+      console.error('Map fetch failed:', err)
+      setNearestPOI({
+        lat: loc.lat,
+        lng: loc.lng,
+        name: 'N/A',
+        type: 'Unknown',
+      })
     } finally {
       setLoading(false)
     }

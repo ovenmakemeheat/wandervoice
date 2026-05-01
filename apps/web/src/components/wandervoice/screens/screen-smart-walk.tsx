@@ -12,10 +12,13 @@ import { useAppContext } from '../context/app-context'
 const NAV_SCREENS = ['home', 'smart-walk', 'voice-ask', 'profile'] as const
 
 function StatusBar({ dark = false }: { dark?: boolean }) {
+  const { nearestPOI } = useAppContext()
+  const locLabel = nearestPOI?.name || 'Searching Location...'
+  
   return (
     <div style={{ padding: '6px 14px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
       <span style={{ fontSize: 11, color: dark ? colors.mist : colors.leaf }}>9:41</span>
-      <span style={{ fontSize: 11, color: colors.bark }}>Old Quarter · Hanoi</span>
+      <span style={{ fontSize: 11, color: colors.bark, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{locLabel}</span>
       <span style={{ fontSize: 11, color: dark ? colors.mist : colors.leaf }}>···</span>
     </div>
   )
@@ -107,7 +110,7 @@ function FloatingNarrativeButton({
 }
 
 function LockView({ onUnlock }: { onUnlock: () => void }) {
-  const { theme } = useAppContext()
+  const { theme, nearestPOI } = useAppContext()
   const isDark = theme === 'dark'
   const [narrating, setNarrating] = useState(true)
   const MODES = ['Story', 'Facts', 'Secrets']
@@ -117,7 +120,8 @@ function LockView({ onUnlock }: { onUnlock: () => void }) {
   const bg = isDark ? colors.canopy : '#eef4ef'
   const textPrimary = isDark ? colors.mist : colors.leaf
   const textSecondary = colors.bark
-  const border = isDark ? borders.borderD : borders.border
+
+  const poiName = nearestPOI?.name || 'Discovering...'
 
   return (
     <div
@@ -137,8 +141,12 @@ function LockView({ onUnlock }: { onUnlock: () => void }) {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontSize: 10, color: textSecondary, letterSpacing: 1.5 }}>OLD QUARTER · HANOI</div>
-          <div style={{ fontSize: 10, color: textSecondary, marginTop: 3 }}>1.2 km · 4 gems heard</div>
+          <div style={{ fontSize: 10, color: textSecondary, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            {nearestPOI?.name || 'Locating...'}
+          </div>
+          <div style={{ fontSize: 10, color: textSecondary, marginTop: 3 }}>
+            {nearestPOI?.address || 'Hanoi District'} · 4 gems heard
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 3, background: isDark ? 'rgba(245,247,242,0.06)' : 'rgba(28,39,32,0.06)', borderRadius: 20, padding: 2 }} onClick={(e) => e.stopPropagation()}>
           {KEYS.map((k, i) => {
@@ -158,8 +166,8 @@ function LockView({ onUnlock }: { onUnlock: () => void }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, textAlign: 'center' }}>
         <DiamondMarker size={14} color={colors.teal} style={{ borderRadius: 3 }} />
-        <div style={{ fontSize: 24, fontWeight: 700, color: textPrimary, lineHeight: 1.1 }}>Hàng Bạc Silver Street</div>
-        <div style={{ fontSize: 12, color: textSecondary }}>Est. 1428 · Jewellery guild</div>
+        <div style={{ fontSize: 24, fontWeight: 700, color: textPrimary, lineHeight: 1.1 }}>{poiName}</div>
+        <div style={{ fontSize: 12, color: textSecondary }}>Nearby · narrative active</div>
       </div>
 
       {/* Narrative button is now a relative wave below the text */}
@@ -169,11 +177,113 @@ function LockView({ onUnlock }: { onUnlock: () => void }) {
         <div style={{ background: colors.gold, borderRadius: 20, padding: '7px 14px', display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
           <DiamondMarker size={8} color={colors.leaf} style={{ borderRadius: 1 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: colors.leaf, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Hàng Bạc approaching</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: colors.leaf, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{poiName} approaching</div>
             <div style={{ fontSize: 10, color: 'rgba(28,39,32,0.65)' }}>120m · narrative will auto-start</div>
           </div>
         </div>
         <span style={{ fontSize: 11, color: textSecondary, opacity: 0.8 }}>Tap anywhere to unlock</span>
+      </div>
+    </div>
+  )
+}
+
+function POIPanel() {
+  const { nearestPOI, theme } = useAppContext()
+  const isDark = theme === 'dark'
+
+  // Loading / Skeleton State
+  if (!nearestPOI) {
+    return (
+      <div style={{ padding: '16px 14px 10px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+          <div className="skeleton" style={{ width: 90, height: 90, borderRadius: 16, flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div className="skeleton" style={{ width: '40%', height: 10, marginBottom: 8 }} />
+            <div className="skeleton" style={{ width: '80%', height: 20, marginBottom: 12 }} />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <div className="skeleton" style={{ width: 60, height: 16, borderRadius: 6 }} />
+              <div className="skeleton" style={{ width: 60, height: 16, borderRadius: 6 }} />
+            </div>
+          </div>
+        </div>
+        <style>{`
+          .skeleton {
+            background: ${isDark ? 'rgba(245,247,242,0.06)' : 'rgba(28,39,32,0.06)'};
+            background-image: linear-gradient(90deg, transparent, ${isDark ? 'rgba(245,247,242,0.1)' : 'rgba(28,39,32,0.1)'}, transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+          }
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+        `}</style>
+      </div>
+    )
+  }
+
+  const poiName = nearestPOI.name
+  const poiImage = nearestPOI.imageUrl
+
+  return (
+    <div style={{ padding: '16px 14px 10px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+        <DiamondMarker size={8} color={colors.teal} />
+        <span style={{ fontSize: 11, fontWeight: 500, color: isDark ? colors.mist : colors.leaf }}>Nearby POI</span>
+      </div>
+
+      <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+        <div style={{ 
+          width: 90, 
+          height: 90, 
+          borderRadius: 16, 
+          overflow: 'hidden', 
+          background: isDark ? 'linear-gradient(135deg, #2c3e50, #000000)' : 'linear-gradient(135deg, #dce8db, #c4d4c0)', 
+          flexShrink: 0, 
+          border: isDark ? borders.borderD : borders.border,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          {poiImage ? (
+            <img src={poiImage} alt={poiName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <span style={{ fontSize: 24, opacity: 0.2 }}>📍</span>
+          )}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: colors.teal, letterSpacing: 0.5, textTransform: 'uppercase' }}>
+              {nearestPOI.type || 'Landmark'}
+            </span>
+            {nearestPOI.address && (
+              <>
+                <span style={{ fontSize: 10, color: colors.bark }}>•</span>
+                <span style={{ fontSize: 10, color: colors.bark }}>{nearestPOI.address}</span>
+              </>
+            )}
+          </div>
+          
+          <div style={{ fontSize: 20, fontWeight: 700, color: isDark ? colors.mist : colors.leaf, marginBottom: 6, lineHeight: 1.2 }}>
+            {poiName}
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {nearestPOI.tags?.['opening_hours'] && (
+              <div style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: isDark ? 'rgba(245,247,242,0.06)' : 'rgba(28,39,32,0.06)', color: colors.bark }}>
+                Open: {nearestPOI.tags['opening_hours']}
+              </div>
+            )}
+            {nearestPOI.tags?.['historic:period'] && (
+              <div style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: 'rgba(212,175,55,0.1)', color: colors.gold }}>
+                Period: {nearestPOI.tags['historic:period']}
+              </div>
+            )}
+            <div style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, background: isDark ? 'rgba(245,247,242,0.06)' : 'rgba(28,39,32,0.06)', color: colors.bark }}>
+              2.4 km Walk
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -194,21 +304,7 @@ function ActiveMergedView() {
 
       <BottomSheet dark={isDark} defaultTab={1} bottomOffset={NAV_HEIGHT}>
         <MetricStrip dark={isDark} />
-        {/* POI details section integrated into the draggable panel */}
-        <div style={{ padding: '16px 14px 10px', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <DiamondMarker size={8} color={colors.teal} />
-            <span style={{ fontSize: 11, fontWeight: 500, color: isDark ? colors.mist : colors.leaf }}>Nearby POI</span>
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: isDark ? colors.mist : colors.leaf, marginBottom: 4 }}>
-            Hàng Bạc Silver Street
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: colors.bark }}>Est. 1428</span>
-            <span style={{ fontSize: 11, color: colors.teal }}>·</span>
-            <span style={{ fontSize: 11, color: colors.bark }}>Jewellery guild</span>
-          </div>
-        </div>
+        <POIPanel />
       </BottomSheet>
 
       <NavBar active={1} onNavigate={(t) => navigate(NAV_SCREENS[t])} />

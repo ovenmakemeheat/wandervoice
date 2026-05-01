@@ -8,6 +8,18 @@ export type NarrativeMode = 'story' | 'facts' | 'secrets'
 
 export type ThemeMode = 'light' | 'dark'
 
+export interface POI {
+  lat: number
+  lng: number
+  name: string
+  description?: string
+  imageUrl?: string
+  type?: string
+  address?: string
+  tags?: Record<string, string>
+  distance?: number // in meters
+}
+
 export type ScreenName =
   | 'splash'
   | 'sign-in'
@@ -50,6 +62,8 @@ interface AppState {
   walkActive: boolean
   gemsCollected: number
   distanceKm: number
+  nearestPOI: POI | null
+  nearbyPOIs: POI[]
 
   // Voice / Chat
   chatHistory: ChatMessage[]
@@ -71,6 +85,8 @@ type Action =
   | { type: 'SET_PENDING_QUESTION'; question: string }
   | { type: 'CLEAR_PENDING_QUESTION' }
   | { type: 'SET_WALK_ACTIVE'; value: boolean }
+  | { type: 'SET_NEAREST_POI'; poi: POI | null }
+  | { type: 'SET_NEARBY_POIS'; pois: POI[] }
   | { type: 'ADD_GEM' }
 
 // ── Reducer ───────────────────────────────────────────────────────────────
@@ -114,6 +130,10 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, pendingQuestion: '' }
     case 'SET_WALK_ACTIVE':
       return { ...state, walkActive: action.value }
+    case 'SET_NEAREST_POI':
+      return { ...state, nearestPOI: action.poi }
+    case 'SET_NEARBY_POIS':
+      return { ...state, nearbyPOIs: action.pois }
     case 'ADD_GEM':
       return { ...state, gemsCollected: state.gemsCollected + 1 }
     default:
@@ -136,6 +156,13 @@ const INITIAL_STATE: AppState = {
   walkActive: false,
   gemsCollected: 4,
   distanceKm: 1.2,
+  nearestPOI: {
+    lat: 21.0333,
+    lng: 105.8500,
+    name: 'Old Quarter, Hanoi',
+    imageUrl: 'https://images.unsplash.com/photo-1555949258-eb67b1ef0ceb?auto=format&fit=crop&w=300&q=80'
+  },
+  nearbyPOIs: [],
   chatHistory: [],
   pendingQuestion: '',
 }
@@ -155,6 +182,8 @@ interface AppContextValue extends AppState {
   setPendingQuestion: (question: string) => void
   clearPendingQuestion: () => void
   setWalkActive: (value: boolean) => void
+  setNearestPOI: (poi: POI | null) => void
+  setNearbyPOIs: (pois: POI[]) => void
   addGem: () => void
 }
 
@@ -183,6 +212,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setPendingQuestion = useCallback((question: string) => dispatch({ type: 'SET_PENDING_QUESTION', question }), [])
   const clearPendingQuestion = useCallback(() => dispatch({ type: 'CLEAR_PENDING_QUESTION' }), [])
   const setWalkActive = useCallback((value: boolean) => dispatch({ type: 'SET_WALK_ACTIVE', value }), [])
+  const setNearestPOI = useCallback((poi: POI | null) => dispatch({ type: 'SET_NEAREST_POI', poi }), [])
+  const setNearbyPOIs = useCallback((pois: POI[]) => dispatch({ type: 'SET_NEARBY_POIS', pois }), [])
   const addGem = useCallback(() => dispatch({ type: 'ADD_GEM' }), [])
 
   return (
@@ -201,6 +232,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setPendingQuestion,
         clearPendingQuestion,
         setWalkActive,
+        setNearestPOI,
+        setNearbyPOIs,
         addGem,
       }}
     >

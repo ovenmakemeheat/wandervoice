@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WanderVoice — Wireframes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1a1a1a; font-family: 'Inter', sans-serif; }
+</style>
+</head>
+<body>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel">
+
+// ─── TOKENS ──────────────────────────────────────────────────────────────────
+const C = {
+  leaf:    '#1C2720', canopy: '#162218', teal:  '#2A7560',
+  gold:    '#E8A850', mist:   '#F5F7F2', mistBg:'#EFF4EE',
+  bark:    '#6B7C6A', dew:    '#D4DFD3', verified:'#27AE60',
+};
+const F = "'Inter', sans-serif";
+const border  = '1.5px solid rgba(28,39,32,0.18)';
+const borderT = `1.5px solid ${C.teal}`;
+const borderG = `1.5px solid ${C.gold}`;
+const borderD = '1.5px solid rgba(245,247,242,0.15)';
+
+// ─── PRIMITIVES ───────────────────────────────────────────────────────────────
+const T = ({size=12, weight=400, color=C.leaf, style={}, children}) => (
+  <div style={{fontFamily:F, fontSize:size, fontWeight:weight, color, lineHeight:1.45, ...style}}>{children}</div>
+);
+const Div = ({color='rgba(28,39,32,0.12)', my=8}) => (
+  <div style={{height:1, background:color, margin:`${my}px 0`}} />
+);
+
+// ─── ICONS (stroke SVG, 20×20 grid) ──────────────────────────────────────────
+const Icon = ({d, size=18, color='currentColor', viewBox='0 0 24 24', fill='none', sw=1.8, style={}}) => (
+  <svg width={size} height={size} viewBox={viewBox} fill={fill} stroke={color}
+    strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <path d={d}/>
+  </svg>
+);
+const Ico = {
+  home:    <Icon d="M3 12L12 3l9 9M5 10v10h5v-6h4v6h5V10"/>,
+  gem:     <Icon d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>,
+  bars:    <Icon d="M4 18v-6M9 18V6M14 18v-8M19 18v-4"/>,
+  person:  <Icon d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>,
+  mic:     <Icon d="M12 1a3 3 0 013 3v8a3 3 0 01-6 0V4a3 3 0 013-3zM19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>,
+  heart:   <Icon d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>,
+  share:   <Icon d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>,
+  back:    <Icon d="M19 12H5M12 19l-7-7 7-7"/>,
+  check:   <Icon d="M20 6L9 17l-5-5"/>,
+  close:   <Icon d="M18 6L6 18M6 6l12 12"/>,
+  chevron: <Icon d="M9 18l6-6-6-6"/>,
+  clock:   <Icon d="M12 22a10 10 0 100-20 10 10 0 000 20zM12 6v6l4 2"/>,
+  pause:   <Icon d="M6 4h4v16H6zM14 4h4v16h-4"/>,
+  play:    <svg width={18} height={18} viewBox="0 0 24 24" fill={C.mist}><path d="M5 3l14 9-14 9V3z"/></svg>,
+  map:     <Icon d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0zM12 10a1 1 0 100-2 1 1 0 000 2z"/>,
+  diamond: null, // rendered inline as rotated square
+};
+
+// ─── WAVEFORM ─────────────────────────────────────────────────────────────────
+const Wave = ({color=C.teal, n=20, h=28, active=true}) => {
+  const hs = [4,8,14,20,26,20,14,20,26,28,22,16,10,18,24,18,10,14,20,14,8,12,20,14,8];
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:2.5,height:h}}>
+      {hs.slice(0,n).map((v,i)=>(
+        <div key={i} style={{width:2.5,height:active?v:3,background:color,borderRadius:2,opacity:active?(0.45+(v/28)*0.55):0.22}}/>
+      ))}
+    </div>
+  );
+};
+
+// ─── MAP SKETCH ───────────────────────────────────────────────────────────────
+const Map = ({dark=false, h=140, gems=true}) => {
+  const bg = dark ? '#1A2820' : '#C4D4C0';
+  const grid = dark ? 'rgba(245,247,242,0.08)' : 'rgba(28,39,32,0.10)';
+  const road = dark ? 'rgba(245,247,242,0.28)' : 'rgba(28,39,32,0.22)';
+  return (
+    <div style={{background:bg,height:h,borderRadius:8,position:'relative',overflow:'hidden'}}>
+      {[0.28,0.55,0.78].map(x=><div key={x} style={{position:'absolute',left:`${x*100}%`,top:0,bottom:0,borderLeft:`1px solid ${grid}`}}/>)}
+      {[0.35,0.68].map(y=><div key={y} style={{position:'absolute',top:`${y*100}%`,left:0,right:0,borderTop:`1px solid ${grid}`}}/>)}
+      <svg style={{position:'absolute',inset:0,width:'100%',height:'100%'}} viewBox="0 0 200 140" preserveAspectRatio="none">
+        <path d="M100 0 C94 28 118 48 100 76 C82 104 112 122 100 140" stroke={road} strokeWidth="7" fill="none" strokeLinecap="round"/>
+      </svg>
+      {gems && <>
+        <div style={{position:'absolute',left:'20%',top:'28%',width:10,height:10,background:C.teal,transform:'rotate(45deg)',borderRadius:2}}/>
+        <div style={{position:'absolute',right:'22%',top:'52%',width:10,height:10,background:C.teal,transform:'rotate(45deg)',borderRadius:2}}/>
+        <div style={{position:'absolute',left:'58%',top:'18%',width:8,height:8,background:dark?C.mist:C.leaf,borderRadius:'50%'}}/>
+      </>}
+      <div style={{position:'absolute',left:'47%',top:'44%',transform:'translate(-50%,-50%)'}}>
+        <div style={{width:14,height:14,background:C.teal,borderRadius:'50%',border:`2.5px solid ${C.mist}`,boxShadow:`0 0 0 5px rgba(42,117,96,0.22)`}}/>
+      </div>
+    </div>
+  );
+};
+
+// ─── NARRATIVE TOGGLE ─────────────────────────────────────────────────────────
+const NarrativeToggle = ({active, onToggle, dark=false}) => (
+  <div onClick={onToggle} style={{
+    display:'flex',flexDirection:'column',alignItems:'center',gap:6,
+    padding:'14px 32px',borderRadius:32,cursor:'pointer',userSelect:'none',
+    background: active ? C.teal : (dark?'rgba(245,247,242,0.07)':C.mistBg),
+    border: active ? `2px solid ${C.teal}` : (dark?borderD:border),
+    boxShadow: active ? '0 0 0 7px rgba(42,117,96,0.16)' : 'none',
+    transition:'all 0.2s',
+  }}>
+    <div style={{display:'flex',alignItems:'center',gap:3,height:22}}>
+      {active
+        ? [5,10,18,14,22,18,12,20,22,16,10,18,14,8].map((v,i)=>(
+            <div key={i} style={{width:2.5,height:v,background:C.mist,borderRadius:2,opacity:0.6+(v/22)*0.4}}/>
+          ))
+        : [<div key="a" style={{width:3.5,height:18,background:dark?C.bark:C.bark,borderRadius:2}}/>,
+           <div key="b" style={{width:3.5,height:18,background:dark?C.bark:C.bark,borderRadius:2,marginLeft:6}}/>]
+      }
+    </div>
+    <T size={13} weight={600} color={active?C.mist:(dark?'rgba(245,247,242,0.55)':C.bark)}>
+      {active ? 'Pause Narrative' : 'Continue Narrative'}
+    </T>
+    <T size={10} color={active?'rgba(245,247,242,0.65)':(dark?'rgba(245,247,242,0.3)':C.bark)}>
+      {active ? 'AI narrating your walk' : 'Tap to resume guide'}
+    </T>
+  </div>
+);
+
+// ─── MODE PILL ROW ────────────────────────────────────────────────────────────
+const ModePills = ({mode, setMode, dark=false}) => (
+  <div style={{display:'flex',gap:5}}>
+    {['Story','Facts','Secrets'].map(m=>(
+      <div key={m} onClick={()=>setMode(m)} style={{
+        padding:'4px 11px',borderRadius:20,cursor:'pointer',
+        border: mode===m ? borderT : (dark?borderD:border),
+        background: mode===m ? C.teal : 'transparent',
+      }}>
+        <T size={11} weight={mode===m?600:400} color={mode===m?C.mist:(dark?'rgba(245,247,242,0.5)':C.bark)}>{m}</T>
+      </div>
+    ))}
+  </div>
+);
+
+// ─── TABS: Info / Narrative / History ────────────────────────────────────────
+const Tabs = ({tab, setTab, dark=false}) => {
+  const tabs = ['Info','Narrative','History'];
+  const bg   = dark ? 'rgba(255,255,255,0.04)' : 'white';
+  const abg  = dark ? 'rgba(42,117,96,0.18)'   : C.mistBg;
+  return (
+    <div style={{display:'flex',borderBottom:dark?borderD:border}}>
+      {tabs.map((t,i)=>(
+        <div key={t} onClick={()=>setTab(i)} style={{
+          flex:1,padding:'9px 0',textAlign:'center',cursor:'pointer',
+          background:tab===i?abg:bg,
+          borderRight:i<2?(dark?borderD:border):'none',
+        }}>
+          <T size={12} weight={tab===i?600:400} color={tab===i?C.teal:(dark?'rgba(245,247,242,0.45)':C.bark)}>{t}</T>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ─── POI INFO TAB (text only) ─────────────────────────────────────────────────
+const InfoTab = ({dark=false}) => (
+  <div style={{padding:'12px 14px',display:'flex',flexDirection:'column',gap:8}}>
+    <T size={17} weight={700} color={dark?C.mist:C.leaf}>Hàng Bạc Silver Street</T>
+    <T size={12} color={C.bark}>Est. 1428</T>
+    <Div color={dark?'rgba(245,247,242,0.08)':'rgba(28,39,32,0.10)'} my={4}/>
+    {[['Type','Jewellery guild district'],['District','Hoàn Kiếm, Hanoi'],['Length','450 m'],['Founded by','Silversmiths of Châu Khê']].map(([k,v])=>(
+      <div key={k} style={{display:'flex',justifyContent:'space-between',alignItems:'baseline'}}>
+        <T size={11} color={C.bark}>{k}</T>
+        <T size={12} weight={500} color={dark?C.mist:C.leaf}>{v}</T>
+      </div>
+    ))}
+    <Div color={dark?'rgba(245,247,242,0.08)':'rgba(28,39,32,0.10)'} my={4}/>
+    <T size={12} color={C.bark} style={{lineHeight:1.65}}>
+      The street was established under the Lê dynasty guild system. Artisans migrated from Châu Khê village to produce silverwork and, later, coins for the royal court.
+    </T>
+  </div>
+);
+
+// ─── NARRATIVE TAB (core feature) ────────────────────────────────────────────
+const NarrativeTab = ({dark=false}) => {
+  const [narrating, setNarrating] = React.useState(true);
+  const [mode, setMode] = React.useState('Story');
+  const suggestions = [
+    {label:'Switch to Secrets?', reason:'This street has hidden guild rituals'},
+    {label:'Try Facts mode', reason:'Dates and measurements available'},
+  ];
+  return (
+    <div style={{padding:'12px 14px',display:'flex',flexDirection:'column',gap:12}}>
+      {/* Place + mode */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div>
+          <T size={14} weight={600} color={dark?C.mist:C.leaf}>Hàng Bạc Silver Street</T>
+          <T size={11} color={C.bark} style={{marginTop:2}}>Est. 1428 · Jewellery guild</T>
+        </div>
+        <div style={{display:'flex',alignItems:'center',gap:6,color:C.bark}}>
+          {Ico.mic}
+          <T size={11} color={C.teal}>Ask</T>
+        </div>
+      </div>
+
+      {/* Mode selector */}
+      <ModePills mode={mode} setMode={setMode} dark={dark}/>
+
+      {/* Narrative toggle — THE core button */}
+      <div style={{display:'flex',justifyContent:'center',paddingTop:4}}>
+        <NarrativeToggle active={narrating} onToggle={()=>setNarrating(p=>!p)} dark={dark}/>
+      </div>
+
+      {/* Quick style suggestions */}
+      <div>
+        <T size={10} weight={500} color={C.bark} style={{letterSpacing:1,marginBottom:6}}>QUICK SUGGESTIONS</T>
+        {suggestions.map(s=>(
+          <div key={s.label} style={{
+            display:'flex',justifyContent:'space-between',alignItems:'center',
+            padding:'8px 10px',borderRadius:8,marginBottom:5,
+            border:dark?borderD:border,
+            background:dark?'rgba(245,247,242,0.04)':'white',cursor:'pointer',
+          }}>
+            <div>
+              <T size={12} weight={500} color={dark?C.mist:C.leaf}>{s.label}</T>
+              <T size={10} color={C.bark}>{s.reason}</T>
+            </div>
+            <div style={{color:C.teal}}>{Ico.chevron}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── HISTORY TAB ─────────────────────────────────────────────────────────────
+const HistoryTab = ({dark=false}) => {
+  const items = [
+    {time:'9:44',place:'Hàng Bạc Silver St.',mode:'Story',  snippet:'…the silversmiths arrived from Châu Khê in 1428, carrying tools wrapped in…'},
+    {time:'9:38',place:'Bach Ma Temple',    mode:'Secrets', snippet:'…the well beneath the altar hasn\'t been mentioned in any official guide…'},
+    {time:'9:21',place:'Đồng Xuân Market', mode:'Facts',   snippet:'…opened in 1889 under French colonial administration, originally covering…'},
+    {time:'9:05',place:'Hoan Kiem Lake',   mode:'Story',   snippet:'…the turtle surfaced three times before the sword was returned, according to…'},
+  ];
+  return (
+    <div style={{padding:'10px 14px',display:'flex',flexDirection:'column',gap:6}}>
+      <T size={10} weight={500} color={C.bark} style={{letterSpacing:1,marginBottom:2}}>TODAY'S NARRATIVE</T>
+      {items.map((it,i)=>(
+        <div key={i} style={{
+          padding:'9px 11px',borderRadius:10,
+          border:dark?borderD:border,
+          background:dark?'rgba(245,247,242,0.04)':'white',
+        }}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+            <div style={{display:'flex',alignItems:'center',gap:6}}>
+              <T size={11} weight={600} color={dark?C.mist:C.leaf}>{it.place}</T>
+              <div style={{padding:'1px 6px',borderRadius:10,background:C.teal}}>
+                <T size={9} weight={500} color={C.mist}>{it.mode}</T>
+              </div>
+            </div>
+            <T size={10} color={C.bark}>{it.time}</T>
+          </div>
+          <T size={11} color={C.bark} style={{lineHeight:1.5}}>{it.snippet}</T>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ─── BOTTOM SHEET with tabs ───────────────────────────────────────────────────
+const BottomSheet = ({dark=false, defaultTab=1}) => {
+  const [tab, setTab] = React.useState(defaultTab);
+  const bg = dark ? 'rgba(22,34,24,0.97)' : 'white';
+  return (
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',
+      background:bg,borderRadius:'14px 14px 0 0',
+      border:dark?borderD:border,borderBottom:'none'}}>
+      <Tabs tab={tab} setTab={setTab} dark={dark}/>
+      <div style={{flex:1,overflowY:'auto'}}>
+        {tab===0 && <InfoTab dark={dark}/>}
+        {tab===1 && <NarrativeTab dark={dark}/>}
+        {tab===2 && <HistoryTab dark={dark}/>}
+      </div>
+    </div>
+  );
+};
+
+// ─── FLOATING PILL NAVBAR ─────────────────────────────────────────────────────
+const NavBar = ({active=0}) => {
+  const [tab, setTab] = React.useState(active);
+  const icons = [Ico.home, Ico.gem, Ico.bars, Ico.person];
+  return (
+    <div style={{
+      position:'absolute',bottom:14,left:'50%',transform:'translateX(-50%)',
+      display:'flex',alignItems:'center',gap:3,
+      background:'rgba(22,34,24,0.96)',borderRadius:50,padding:'5px 8px',
+      boxShadow:'0 4px 24px rgba(0,0,0,0.38)',zIndex:100,
+    }}>
+      {icons.map((icon,i)=>(
+        <div key={i} onClick={()=>setTab(i)} style={{
+          width:44,height:44,borderRadius:'50%',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          background:tab===i?C.teal:'transparent',
+          color:tab===i?C.mist:'rgba(245,247,242,0.38)',
+          cursor:'pointer',transition:'background 0.16s,color 0.16s',
+        }}>
+          {icon}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const WithNav = ({children, navActive=0, bg=C.mist}) => (
+  <div style={{width:'100%',height:'100%',position:'relative',background:bg,overflow:'hidden',display:'flex',flexDirection:'column'}}>
+    <div style={{flex:1,overflowY:'auto',paddingBottom:72}}>
+      {children}
+    </div>
+    <NavBar active={navActive}/>
+  </div>
+);
+
+// ─── APPROACH BANNER ──────────────────────────────────────────────────────────
+const ApproachBanner = ({name='Hàng Bạc Silver Street', dist='120m'}) => (
+  <div style={{margin:'0 12px 6px',background:C.gold,borderRadius:10,padding:'7px 12px',display:'flex',alignItems:'center',gap:8}}>
+    <div style={{width:9,height:9,background:C.leaf,transform:'rotate(45deg)',borderRadius:2,flexShrink:0}}/>
+    <div style={{flex:1}}>
+      <T size={12} weight={600} color={C.leaf}>{name}</T>
+      <T size={10} color={'rgba(28,39,32,0.65)'}>{dist} ahead · narrative queued</T>
+    </div>
+    <div style={{color:C.leaf}}>{Ico.chevron}</div>
+  </div>
+);
+
+// ─── SUB-PLACE CHIP ───────────────────────────────────────────────────────────
+const SubPlaceChip = ({label='Bach Ma Temple · Main Hall', dark=false, onClick}) => (
+  <div onClick={onClick} style={{
+    display:'inline-flex',alignItems:'center',gap:6,
+    padding:'5px 10px',borderRadius:20,cursor:'pointer',
+    background:dark?'rgba(245,247,242,0.06)':'rgba(42,117,96,0.07)',
+    border:dark?borderD:borderT,
+  }}>
+    <div style={{width:6,height:6,borderRadius:'50%',background:C.teal}}/>
+    <T size={11} weight={500} color={dark?C.mist:C.teal}>{label}</T>
+    <T size={11} color={C.bark}>↓</T>
+  </div>
+);
+
+// ─── METRIC STRIP (Strava-style) ──────────────────────────────────────────────
+const MetricStrip = ({dark=false}) => (
+  <div style={{display:'flex',gap:0,padding:'7px 14px',borderBottom:dark?borderD:border}}>
+    {[['1.2km','walked'],['4','gems'],['22m','guided']].map(([v,l],i)=>(
+      <div key={l} style={{flex:1,textAlign:'center',borderRight:i<2?(dark?borderD:border):'none'}}>
+        <T size={17} weight={700} color={dark?C.mist:C.leaf}>{v}</T>
+        <T size={10} color={C.bark}>{l}</T>
+      </div>
+    ))}
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCREEN 1 — MAIN MAP + AUDIO GUIDE (3 variations)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// A: Light, content-first
+const S1A = () => (
+  <div style={{display:'flex',flexDirection:'column',height:'100%',background:C.mist,fontFamily:F}}>
+    <div style={{padding:'6px 14px',display:'flex',justifyContent:'space-between',background:C.leaf}}>
+      <T size={11} color={C.mist}>9:41</T>
+      <T size={11} color={C.bark}>Old Quarter · Hanoi</T>
+      <T size={11} color={C.mist}>···</T>
+    </div>
+    <div style={{padding:'8px 12px 0'}}>
+      <div style={{position:'relative'}}>
+        <Map h={128}/>
+        <div style={{position:'absolute',top:6,right:6,background:C.gold,borderRadius:12,padding:'2px 8px'}}>
+          <T size={10} weight={500} color={C.leaf}>◈ 120m</T>
+        </div>
+        <div style={{position:'absolute',bottom:6,left:8}}>
+          <SubPlaceChip label="Old Quarter · Hàng Bạc"/>
+        </div>
+      </div>
+    </div>
+    <div style={{flex:1,margin:'8px 12px 0',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <BottomSheet dark={false} defaultTab={1}/>
+    </div>
+  </div>
+);
+
+// B: Dark, Strava metrics
+const S1B = () => (
+  <div style={{display:'flex',flexDirection:'column',height:'100%',background:C.leaf,fontFamily:F}}>
+    <div style={{padding:'6px 14px',display:'flex',justifyContent:'space-between'}}>
+      <T size={11} color={C.mist}>9:41</T>
+      <T size={11} color={C.bark}>Old Quarter · Hanoi</T>
+      <T size={11} color={C.mist}>···</T>
+    </div>
+    <div style={{padding:'0 12px'}}>
+      <Map h={170} dark/>
+    </div>
+    <MetricStrip dark/>
+    <div style={{flex:1,margin:'0 12px',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <BottomSheet dark={true} defaultTab={1}/>
+    </div>
+  </div>
+);
+
+// C: Floating cards, approach-first
+const S1C = () => (
+  <div style={{display:'flex',flexDirection:'column',height:'100%',background:C.mistBg,fontFamily:F}}>
+    <div style={{padding:'6px 14px',display:'flex',justifyContent:'space-between',background:C.mist,borderBottom:border}}>
+      <T size={11} color={C.leaf}>9:41</T>
+      <T size={11} color={C.bark}>Old Quarter</T>
+      <T size={11} color={C.leaf}>···</T>
+    </div>
+    <div style={{padding:'8px 12px 0'}}>
+      <MetricStrip dark={false}/>
+    </div>
+    <div style={{padding:'6px 12px 0'}}>
+      <Map h={130}/>
+    </div>
+    <ApproachBanner/>
+    <div style={{flex:1,margin:'0 12px',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <BottomSheet dark={false} defaultTab={1}/>
+    </div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCREEN 2 — VOICE INPUT (3 variations)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// A: Full-screen, immersive mic
+const S2A = () => {
+  const [listening, setListening] = React.useState(true);
+  return (
+    <div style={{width:'100%',height:'100%',background:C.leaf,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'18px 20px 28px',fontFamily:F}}>
+      <div style={{width:'100%',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <T size={13} weight={600} color={C.mist}>WanderVoice</T>
+        <div style={{padding:'4px 10px',border:borderD,borderRadius:20}}>
+          <T size={11} color={C.bark}>Hàng Bạc · Story</T>
+        </div>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14}}>
+        <div style={{display:'flex',alignItems:'center',gap:3}}>
+          {[6,11,18,26,36,28,18,26,36,42,36,26,18,24,32,24,16,10,18,26,18,10,7].map((v,i)=>(
+            <div key={i} style={{width:3,height:listening?v:3,background:C.teal,borderRadius:2,opacity:0.55+(v/42)*0.45}}/>
+          ))}
+        </div>
+        <T size={13} color={C.bark}>{listening?'Listening…':'Tap to ask'}</T>
+        {listening && <T size={14} color={C.mist} style={{textAlign:'center',maxWidth:220,lineHeight:1.55}}>"Who built this street and what did they sell?"</T>}
+      </div>
+      <div style={{width:'100%',background:'rgba(245,247,242,0.06)',border:borderD,borderRadius:12,padding:'12px 14px'}}>
+        <T size={10} weight={500} color={C.bark} style={{letterSpacing:1,marginBottom:4}}>CONTEXT</T>
+        <T size={12} color={'rgba(245,247,242,0.65)'} style={{lineHeight:1.6}}>Answering as your Hanoi guide — Story mode, grounded in current location.</T>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+        <div onClick={()=>setListening(p=>!p)} style={{width:62,height:62,borderRadius:'50%',background:listening?C.teal:'rgba(245,247,242,0.1)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:listening?'0 0 0 8px rgba(42,117,96,0.18), 0 0 0 16px rgba(42,117,96,0.07)':'none',transition:'all 0.2s'}}>
+          <div style={{color:C.mist}}>{listening?Ico.pause:Ico.mic}</div>
+        </div>
+        <T size={11} color={C.bark}>{listening?'Tap to stop':'Tap to ask'}</T>
+      </div>
+    </div>
+  );
+};
+
+// B: Suggestions + last answer
+const S2B = () => (
+  <div style={{width:'100%',height:'100%',background:C.mist,display:'flex',flexDirection:'column',fontFamily:F}}>
+    <div style={{padding:'8px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:border}}>
+      <div style={{color:C.bark}}>{Ico.back}</div>
+      <T size={13} weight={600} color={C.leaf}>Ask about this place</T>
+      <div style={{color:C.bark}}>{Ico.close}</div>
+    </div>
+    <div style={{margin:'8px 12px',background:C.teal,borderRadius:10,padding:'10px 14px'}}>
+      <T size={10} color={'rgba(245,247,242,0.65)'} style={{marginBottom:2}}>ASKING ABOUT</T>
+      <T size={13} weight={600} color={C.mist}>Hàng Bạc Silver Street · Story</T>
+    </div>
+    <div style={{padding:'0 12px 6px'}}>
+      <T size={10} weight={500} color={C.bark} style={{letterSpacing:1,marginBottom:6}}>SUGGESTED</T>
+      {['What was sold here 100 years ago?','Who lives above these shophouses?','Is the guild still active?'].map(q=>(
+        <div key={q} style={{padding:'8px 12px',border,borderRadius:8,marginBottom:6,background:'white',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer'}}>
+          <T size={12} color={C.leaf}>{q}</T>
+          <div style={{color:C.teal}}>{Ico.chevron}</div>
+        </div>
+      ))}
+    </div>
+    <Div/>
+    <div style={{flex:1,padding:'6px 12px'}}>
+      <T size={10} weight={500} color={C.bark} style={{letterSpacing:1,marginBottom:6}}>LAST ANSWER</T>
+      <div style={{background:C.mistBg,borderRadius:10,padding:'10px 12px',border}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+          <div style={{width:24,height:24,borderRadius:'50%',background:C.teal,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            {Ico.play}
+          </div>
+          <Wave color={C.teal} n={16} h={18} active={false}/>
+          <T size={11} color={C.bark}>0:48</T>
+        </div>
+        <T size={12} color={C.bark} style={{lineHeight:1.55}}>The street was founded in 1428 by silversmiths from Châu Khê village…</T>
+      </div>
+    </div>
+    <div style={{padding:'10px 12px',borderTop:border,display:'flex',gap:8,alignItems:'center',background:C.mist}}>
+      <div style={{flex:1,background:C.mistBg,borderRadius:24,padding:'10px 16px',border}}>
+        <T size={12} color={C.bark}>Ask anything about this place…</T>
+      </div>
+      <div style={{width:40,height:40,borderRadius:'50%',background:C.teal,display:'flex',alignItems:'center',justifyContent:'center',color:C.mist}}>
+        {Ico.mic}
+      </div>
+    </div>
+  </div>
+);
+
+// C: Chat-style conversation
+const S2C = () => (
+  <div style={{width:'100%',height:'100%',background:C.leaf,display:'flex',flexDirection:'column',fontFamily:F}}>
+    <div style={{padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style={{color:C.bark}}>{Ico.back}</div>
+      <T size={12} weight={600} color={C.mist}>Voice Guide</T>
+      <div style={{color:C.bark}}>{Ico.close}</div>
+    </div>
+    <div style={{flex:1,padding:'8px 14px',display:'flex',flexDirection:'column',gap:10,overflowY:'auto'}}>
+      <div style={{display:'flex',justifyContent:'flex-end'}}>
+        <div style={{background:'rgba(42,117,96,0.28)',borderRadius:'12px 12px 3px 12px',padding:'8px 12px',maxWidth:'75%'}}>
+          <T size={12} color={C.mist} style={{lineHeight:1.5}}>Who built this street?</T>
+        </div>
+      </div>
+      <div style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+        <div style={{width:24,height:24,borderRadius:'50%',background:C.teal,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <T size={10} weight={700} color={C.mist}>W</T>
+        </div>
+        <div style={{background:'rgba(245,247,242,0.07)',borderRadius:'3px 12px 12px 12px',padding:'8px 12px',maxWidth:'80%'}}>
+          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+            <Wave color={C.teal} n={10} h={14} active={false}/>
+            <T size={10} color={C.bark}>0:48</T>
+          </div>
+          <T size={12} color={'rgba(245,247,242,0.8)'} style={{lineHeight:1.5}}>Silversmiths from Châu Khê village, established 1428 under the Lê dynasty guild system…</T>
+        </div>
+      </div>
+      <div style={{display:'flex',justifyContent:'flex-end'}}>
+        <div style={{background:'rgba(42,117,96,0.28)',borderRadius:'12px 12px 3px 12px',padding:'8px 12px',maxWidth:'75%'}}>
+          <T size={12} color={C.mist} style={{lineHeight:1.5}}>Still active today?</T>
+        </div>
+      </div>
+      <div style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+        <div style={{width:24,height:24,borderRadius:'50%',background:C.teal,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <T size={10} weight={700} color={C.mist}>W</T>
+        </div>
+        <div style={{background:'rgba(245,247,242,0.07)',borderRadius:'3px 12px 12px 12px',padding:'8px 12px'}}>
+          <div style={{display:'flex',alignItems:'center',gap:4}}>
+            <Wave color={C.teal} n={8} h={12} active={true}/>
+            <T size={11} color={C.bark}>Generating…</T>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style={{padding:'10px 12px',borderTop:borderD,display:'flex',gap:8,alignItems:'center'}}>
+      <div style={{flex:1,background:'rgba(245,247,242,0.07)',borderRadius:24,padding:'10px 14px',border:borderD}}>
+        <T size={12} color={C.bark}>Continue asking…</T>
+      </div>
+      <div style={{width:40,height:40,borderRadius:'50%',background:C.teal,display:'flex',alignItems:'center',justifyContent:'center',color:C.mist}}>
+        {Ico.mic}
+      </div>
+    </div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCREEN 3 — POI DETAIL / AUDIO PLAYER
+// ─────────────────────────────────────────────────────────────────────────────
+const S3A = () => (
+  <div style={{width:'100%',height:'100%',background:C.mist,display:'flex',flexDirection:'column',fontFamily:F}}>
+    <div style={{height:150,background:`linear-gradient(160deg,${C.canopy},${C.teal}55)`,position:'relative',display:'flex',alignItems:'flex-end',padding:'0 14px 10px'}}>
+      <div style={{position:'absolute',top:10,left:12}}>
+        <div style={{padding:'4px 10px',background:'rgba(0,0,0,0.35)',borderRadius:20,color:C.mist,display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}>
+          {Ico.back}<T size={11} color={C.mist}>Back</T>
+        </div>
+      </div>
+      <div style={{position:'absolute',top:10,right:12,display:'flex',gap:6}}>
+        <div style={{width:32,height:32,borderRadius:'50%',background:'rgba(0,0,0,0.3)',display:'flex',alignItems:'center',justifyContent:'center',color:C.mist}}>{Ico.heart}</div>
+        <div style={{width:32,height:32,borderRadius:'50%',background:'rgba(0,0,0,0.3)',display:'flex',alignItems:'center',justifyContent:'center',color:C.mist}}>{Ico.share}</div>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:6}}>
+        <div style={{width:8,height:8,background:C.teal,transform:'rotate(45deg)',borderRadius:2}}/>
+        <T size={11} weight={500} color={C.mist}>Local Gem</T>
+      </div>
+    </div>
+    <div style={{padding:'12px 14px 8px',borderBottom:border}}>
+      <T size={20} weight={700} color={C.leaf} style={{marginBottom:3}}>Hàng Bạc Silver Street</T>
+      <div style={{display:'flex',gap:8,alignItems:'center'}}>
+        <T size={11} color={C.bark}>Est. 1428</T>
+        <T size={11} color={C.dew}>·</T>
+        <T size={11} color={C.bark}>Jewellery guild</T>
+        <T size={11} color={C.dew}>·</T>
+        <T size={11} color={C.verified}>✓ Verified</T>
+      </div>
+    </div>
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <BottomSheet dark={false} defaultTab={1}/>
+    </div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCREEN 4 — GEM DISCOVERY
+// ─────────────────────────────────────────────────────────────────────────────
+const S4A = () => (
+  <div style={{width:'100%',height:'100%',background:C.mist,display:'flex',flexDirection:'column',fontFamily:F}}>
+    <div style={{padding:'10px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:border,background:C.mist}}>
+      <T size={15} weight={700} color={C.leaf}>Gems Nearby</T>
+      <div style={{display:'flex',gap:6}}>
+        <div style={{padding:'4px 10px',border:borderT,borderRadius:20,background:'rgba(42,117,96,0.08)'}}>
+          <T size={11} color={C.teal}>Map</T>
+        </div>
+        <div style={{padding:'4px 10px',border,borderRadius:20}}>
+          <T size={11} color={C.bark}>Filter</T>
+        </div>
+      </div>
+    </div>
+    <Map h={100}/>
+    <div style={{padding:'8px 14px',display:'flex',gap:0,borderBottom:border}}>
+      {[['12','gems'],['4','unheard'],['1.4km','to walk all']].map(([v,l],i)=>(
+        <div key={l} style={{flex:1,textAlign:'center',borderRight:i<2?border:'none'}}>
+          <T size={18} weight={700} color={C.teal}>{v}</T>
+          <T size={10} color={C.bark}>{l}</T>
+        </div>
+      ))}
+    </div>
+    <div style={{flex:1,overflowY:'auto',padding:'8px 12px',display:'flex',flexDirection:'column',gap:7}}>
+      {[
+        {name:'Hàng Bạc Silver Street',dist:'120m',type:'History',heard:false,gold:true},
+        {name:'Bach Ma Temple',dist:'240m',type:'Temple',heard:false,gold:false},
+        {name:'Silk lantern workshop',dist:'320m',type:'Craft',heard:true,gold:false},
+        {name:'1930s French pharmacy',dist:'410m',type:'Architecture',heard:false,gold:false},
+      ].map(g=>(
+        <div key={g.name} style={{background:g.gold?'rgba(232,168,80,0.07)':'white',border:g.gold?borderG:border,borderRadius:10,padding:'10px 12px',display:'flex',gap:10,alignItems:'center'}}>
+          <div style={{width:18,height:18,background:g.heard?C.bark:C.teal,transform:'rotate(45deg)',borderRadius:3,flexShrink:0}}/>
+          <div style={{flex:1}}>
+            <T size={13} weight={600} color={C.leaf} style={{marginBottom:2}}>{g.name}</T>
+            <div style={{display:'flex',gap:5}}>
+              <T size={10} color={C.bark}>{g.dist}</T>
+              <T size={10} color={C.bark}>·</T>
+              <T size={10} color={C.bark}>{g.type}</T>
+              {g.heard && <><T size={10} color={C.bark}>·</T><T size={10} color={C.bark}>heard</T></>}
+            </div>
+          </div>
+          {!g.heard && <div style={{width:30,height:30,borderRadius:'50%',background:C.teal,display:'flex',alignItems:'center',justifyContent:'center',color:C.mist}}>{Ico.play}</div>}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCREEN 5 — ONBOARDING: NARRATIVE STYLE
+// ─────────────────────────────────────────────────────────────────────────────
+const S5A = () => {
+  const [sel, setSel] = React.useState('Story');
+  return (
+    <div style={{width:'100%',height:'100%',background:C.leaf,display:'flex',flexDirection:'column',fontFamily:F,padding:'18px 18px'}}>
+      <div style={{display:'flex',gap:4,marginBottom:22}}>
+        {[1,1,0,0].map((f,i)=>(
+          <div key={i} style={{flex:1,height:3,borderRadius:2,background:f?C.teal:'rgba(245,247,242,0.15)'}}/>
+        ))}
+      </div>
+      <svg width="52" height="22" viewBox="0 0 60 24" style={{marginBottom:10}}>
+        <circle cx="6" cy="18" r="2.2" fill="none" stroke={C.mist} strokeWidth="1.5"/>
+        <circle cx="15" cy="15" r="2.2" fill="none" stroke={C.mist} strokeWidth="1.5"/>
+        <circle cx="25" cy="13" r="2.2" fill="none" stroke={C.mist} strokeWidth="1.5"/>
+        <line x1="33" y1="22" x2="33" y2="10" stroke={C.teal} strokeWidth="2.2" strokeLinecap="round"/>
+        <line x1="40" y1="22" x2="40" y2="4"  stroke={C.teal} strokeWidth="2.2" strokeLinecap="round"/>
+        <line x1="47" y1="22" x2="47" y2="8"  stroke={C.teal} strokeWidth="2.2" strokeLinecap="round"/>
+        <line x1="54" y1="22" x2="54" y2="13" stroke={C.teal} strokeWidth="2.2" strokeLinecap="round"/>
+      </svg>
+      <T size={11} weight={400} color={C.bark} style={{marginBottom:2}}>WanderVoice</T>
+      <T size={19} weight={700} color={C.mist} style={{marginBottom:4,lineHeight:1.25}}>How do you like your guides?</T>
+      <T size={12} color={C.bark} style={{marginBottom:18,lineHeight:1.65}}>Choose a narrative style. You can switch any time inside a story.</T>
+      <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:'auto'}}>
+        {[
+          {m:'Story',desc:'Narrative arcs, characters, vivid scenes. History as a place remembers it.'},
+          {m:'Facts',desc:'Dates, measurements, context. Dense, scannable, information-first.'},
+          {m:'Secrets',desc:'Hidden layers, local knowledge, what guidebooks omit.'},
+        ].map(s=>(
+          <div key={s.m} onClick={()=>setSel(s.m)} style={{border:sel===s.m?borderT:borderD,borderRadius:12,padding:'12px 14px',background:sel===s.m?'rgba(42,117,96,0.15)':'rgba(245,247,242,0.04)',display:'flex',gap:10,alignItems:'flex-start',cursor:'pointer'}}>
+            <div style={{width:18,height:18,borderRadius:'50%',border:sel===s.m?`2px solid ${C.teal}`:'2px solid rgba(245,247,242,0.2)',background:sel===s.m?C.teal:'transparent',flexShrink:0,marginTop:1,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              {sel===s.m && <div style={{width:6,height:6,borderRadius:'50%',background:C.mist}}/>}
+            </div>
+            <div>
+              <T size={13} weight={600} color={sel===s.m?C.mist:'rgba(245,247,242,0.55)'} style={{marginBottom:2}}>{s.m}</T>
+              <T size={11} color={C.bark} style={{lineHeight:1.55}}>{s.desc}</T>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{marginTop:18,background:C.teal,borderRadius:14,padding:'13px 20px',textAlign:'center',cursor:'pointer'}}>
+        <T size={14} weight={600} color={C.mist}>Continue</T>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCREEN 6 — WALKING MODE (3 variations)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// A: Dark, narrative toggle center
+const S6A = () => {
+  const [narrating, setNarrating] = React.useState(true);
+  const [mode, setMode] = React.useState('Story');
+  return (
+    <div style={{width:'100%',height:'100%',background:C.leaf,display:'flex',flexDirection:'column',fontFamily:F}}>
+      <div style={{padding:'8px 14px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <T size={10} color={C.bark} style={{letterSpacing:1.2}}>OLD QUARTER · HANOI</T>
+          <div style={{display:'flex',gap:14,marginTop:3}}>
+            {[['1.2km','walked'],['4','gems'],['22m','time']].map(([v,l])=>(
+              <div key={l}>
+                <T size={15} weight={700} color={C.mist}>{v}</T>
+                <T size={9} color={C.bark}>{l}</T>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{display:'flex',background:'rgba(245,247,242,0.07)',borderRadius:20,padding:2,gap:1}}>
+          {['S','F','X'].map((m,i)=>(
+            <div key={m} onClick={()=>setMode(['Story','Facts','Secrets'][i])} style={{width:28,height:28,borderRadius:18,display:'flex',alignItems:'center',justifyContent:'center',background:mode===['Story','Facts','Secrets'][i]?C.teal:'transparent',cursor:'pointer'}}>
+              <T size={10} weight={600} color={mode===['Story','Facts','Secrets'][i]?C.mist:C.bark}>{m}</T>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{margin:'0 12px 6px'}}>
+        <SubPlaceChip label="Bach Ma Temple · Main Hall" dark/>
+      </div>
+      <ApproachBanner/>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:10,padding:'0 20px'}}>
+        {narrating && <>
+          <T size={10} color={C.bark} style={{letterSpacing:1.5}}>NARRATING NOW</T>
+          <T size={16} weight={700} color={C.mist} style={{textAlign:'center'}}>Bach Ma Temple</T>
+          <T size={11} color={C.bark}>Est. 1010 · {mode} mode</T>
+        </>}
+        <NarrativeToggle active={narrating} onToggle={()=>setNarrating(p=>!p)} dark/>
+        {!narrating && <T size={11} color={C.bark} style={{textAlign:'center'}}>Guide paused · walking silently</T>}
+      </div>
+      <div style={{padding:'0 12px 10px'}}>
+        <T size={10} color={C.bark} style={{letterSpacing:1.5,marginBottom:6}}>COMING UP</T>
+        <div style={{display:'flex',gap:7}}>
+          {[{n:'Hàng Bạc',d:'120m',h:false},{n:'Silk wkshp',d:'280m',h:false},{n:'Pharmacy',d:'410m',h:true}].map(g=>(
+            <div key={g.n} style={{flex:1,background:g.h?'rgba(245,247,242,0.04)':'rgba(42,117,96,0.12)',border:g.h?borderD:`1px solid rgba(42,117,96,0.35)`,borderRadius:8,padding:'6px 8px'}}>
+              <div style={{width:7,height:7,background:g.h?C.bark:C.teal,transform:'rotate(45deg)',borderRadius:1,marginBottom:4}}/>
+              <T size={10} weight={600} color={g.h?C.bark:C.mist}>{g.n}</T>
+              <T size={9} color={C.bark}>{g.d}</T>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// B: Light, sub-place chips + narrative toggle
+const S6B = () => {
+  const [narrating, setNarrating] = React.useState(true);
+  const [mode, setMode] = React.useState('Facts');
+  const [sub, setSub] = React.useState('Main Gate');
+  return (
+    <div style={{width:'100%',height:'100%',background:C.mist,display:'flex',flexDirection:'column',fontFamily:F}}>
+      <div style={{padding:'8px 14px',display:'flex',justifyContent:'space-between',alignItems:'center',borderBottom:border}}>
+        <T size={13} weight={700} color={C.leaf}>WanderVoice</T>
+        <div style={{display:'flex',gap:4,background:C.mistBg,borderRadius:20,padding:2}}>
+          {['Story','Facts','Secrets'].map(m=>(
+            <div key={m} onClick={()=>setMode(m)} style={{padding:'3px 9px',borderRadius:16,background:mode===m?C.teal:'transparent',cursor:'pointer'}}>
+              <T size={10} weight={mode===m?600:400} color={mode===m?C.mist:C.bark}>{m}</T>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{padding:'8px 12px 0'}}>
+        <T size={10} weight={500} color={C.bark} style={{letterSpacing:1,marginBottom:5}}>WHERE ARE YOU NOW?</T>
+        <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:4}}>
+          {['Main Gate','Library','Clock Tower','Admin Block','Hall A'].map(s=>(
+            <div key={s} onClick={()=>setSub(s)} style={{flexShrink:0,padding:'5px 10px',borderRadius:20,border:sub===s?borderT:border,background:sub===s?'rgba(42,117,96,0.08)':'white',cursor:'pointer'}}>
+              <T size={11} weight={sub===s?500:400} color={sub===s?C.teal:C.bark}>{s}</T>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{position:'relative',margin:'8px 12px 0'}}>
+        <Map h={120}/>
+        <div style={{position:'absolute',bottom:8,left:8,background:C.gold,borderRadius:12,padding:'3px 8px',display:'flex',alignItems:'center',gap:4}}>
+          <div style={{width:6,height:6,background:C.leaf,transform:'rotate(45deg)',borderRadius:1}}/>
+          <T size={10} weight={500} color={C.leaf}>Hàng Bạc · 120m</T>
+        </div>
+      </div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:6,padding:'8px 20px'}}>
+        {narrating && <T size={11} color={C.bark} style={{textAlign:'center'}}>Narrating · {sub} · {mode} mode</T>}
+        <NarrativeToggle active={narrating} onToggle={()=>setNarrating(p=>!p)} dark={false}/>
+      </div>
+      <div style={{padding:'0 12px 10px'}}>
+        <div style={{display:'flex',gap:7}}>
+          {[{n:'Hàng Bạc',d:'120m'},{n:'Bach Ma',d:'240m'},{n:'Silk wkshp',d:'320m'}].map(g=>(
+            <div key={g.n} style={{flex:1,background:'white',border,borderRadius:8,padding:'7px 8px'}}>
+              <div style={{width:7,height:7,background:C.teal,transform:'rotate(45deg)',borderRadius:1,marginBottom:4}}/>
+              <T size={10} weight={600} color={C.leaf}>{g.n}</T>
+              <T size={9} color={C.bark}>{g.d}</T>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// C: Minimal dark — gem name big, narrative toggle center
+const S6C = () => {
+  const [narrating, setNarrating] = React.useState(false);
+  const [mode, setMode] = React.useState('Secrets');
+  return (
+    <div style={{width:'100%',height:'100%',background:C.canopy,display:'flex',flexDirection:'column',fontFamily:F,justifyContent:'space-between',padding:'12px 18px 16px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+        <div>
+          <T size={10} color={C.bark} style={{letterSpacing:1.5}}>OLD QUARTER · HANOI</T>
+          <T size={10} color={C.bark} style={{marginTop:3}}>1.2 km · 4 gems heard</T>
+        </div>
+        <div style={{display:'flex',gap:3,background:'rgba(245,247,242,0.06)',borderRadius:20,padding:2}}>
+          {['S','F','X'].map((m,i)=>(
+            <div key={m} onClick={()=>setMode(['Story','Facts','Secrets'][i])} style={{width:26,height:26,borderRadius:18,display:'flex',alignItems:'center',justifyContent:'center',background:mode===['Story','Facts','Secrets'][i]?C.teal:'transparent',cursor:'pointer'}}>
+              <T size={10} weight={600} color={mode===['Story','Facts','Secrets'][i]?C.mist:C.bark}>{m}</T>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12,textAlign:'center'}}>
+        <div style={{width:14,height:14,background:C.teal,transform:'rotate(45deg)',borderRadius:3}}/>
+        <T size={24} weight={700} color={C.mist} style={{lineHeight:1.1}}>Bach Ma Temple</T>
+        <T size={12} color={C.bark}>Est. 1010 · Temple district</T>
+        <NarrativeToggle active={narrating} onToggle={()=>setNarrating(p=>!p)} dark/>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        <div style={{background:C.gold,borderRadius:20,padding:'7px 14px',display:'flex',alignItems:'center',gap:8}}>
+          <div style={{width:8,height:8,background:C.leaf,transform:'rotate(45deg)',borderRadius:1}}/>
+          <div style={{flex:1}}>
+            <T size={12} weight={600} color={C.leaf}>Hàng Bạc approaching</T>
+            <T size={10} color={'rgba(28,39,32,0.65)'}>120m · narrative will auto-start</T>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCREEN 7 — ONBOARDING: AUTO-AUDIO + LEADING INSTRUCTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+const S7A = () => {
+  const [autoOn, setAutoOn] = React.useState(false);
+  const [leading, setLeading] = React.useState(true);
+  const Toggle = ({on, toggle}) => (
+    <div onClick={toggle} style={{width:44,height:24,borderRadius:12,background:on?C.teal:'rgba(245,247,242,0.15)',position:'relative',cursor:'pointer',flexShrink:0}}>
+      <div style={{position:'absolute',top:3,left:on?22:3,width:18,height:18,borderRadius:'50%',background:C.mist,transition:'left 0.2s'}}/>
+    </div>
+  );
+  return (
+    <div style={{width:'100%',height:'100%',background:C.leaf,display:'flex',flexDirection:'column',fontFamily:F,padding:'16px 18px'}}>
+      <div style={{display:'flex',gap:4,marginBottom:20}}>
+        {[1,1,1,0].map((f,i)=><div key={i} style={{flex:1,height:3,borderRadius:2,background:f?C.teal:'rgba(245,247,242,0.15)'}}/>)}
+      </div>
+      <T size={18} weight={700} color={C.mist} style={{marginBottom:4,lineHeight:1.3}}>Set up your walking experience</T>
+      <T size={12} color={C.bark} style={{marginBottom:18,lineHeight:1.65}}>WanderVoice detects nearby gems as you walk. Here's how it will guide you.</T>
+      {[
+        {key:'auto',on:autoOn,toggle:()=>setAutoOn(p=>!p),title:'Auto-audio',desc:'When you walk within 50m of a gem, the guide begins automatically — no tapping required.',confirm:'Will start playing as you approach each gem'},
+        {key:'lead',on:leading,toggle:()=>setLeading(p=>!p),title:'Leading instructions',desc:'Your guide will tell you what to look for before you arrive — "look up at the gate" or "the smell of incense is from the left."',confirm:'Guide will cue your senses as you approach'},
+      ].map(s=>(
+        <div key={s.key} style={{background:'rgba(245,247,242,0.06)',border:s.on?borderT:borderD,borderRadius:12,padding:'12px 14px',marginBottom:10}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+            <T size={13} weight={600} color={C.mist}>{s.title}</T>
+            <Toggle on={s.on} toggle={s.toggle}/>
+          </div>
+          <T size={11} color={C.bark} style={{lineHeight:1.55}}>{s.desc}</T>
+          {s.on && <div style={{marginTop:8,padding:'6px 10px',background:'rgba(42,117,96,0.15)',borderRadius:8,border:`1px solid rgba(42,117,96,0.3)`}}>
+            <T size={10} color={C.teal}>✓ {s.confirm}</T>
+          </div>}
+        </div>
+      ))}
+      <div style={{background:'rgba(232,168,80,0.12)',border:borderG,borderRadius:10,padding:'10px 12px',marginBottom:'auto'}}>
+        <div style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+          <T size={14} color={C.gold} style={{marginTop:1}}>✦</T>
+          <T size={11} color={'rgba(232,168,80,0.9)'} style={{lineHeight:1.55}}>Guides are AI-generated in real time, grounded in your location and chosen narrative mode.</T>
+        </div>
+      </div>
+      <div style={{marginTop:16,background:C.teal,borderRadius:14,padding:'13px 20px',textAlign:'center',cursor:'pointer'}}>
+        <T size={14} weight={600} color={C.mist}>Start wandering</T>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCREEN 8 — SUB-PLACE SELECTION
+// ─────────────────────────────────────────────────────────────────────────────
+const S8A = () => {
+  const [sel, setSel] = React.useState('Main Library');
+  const [narrating, setNarrating] = React.useState(false);
+  const places = [
+    {name:'Main Library',hint:'You may be here',ai:false},
+    {name:'Clock Tower',hint:'50m east',ai:false},
+    {name:'Lecture Hall A',hint:'AI fetched',ai:true},
+    {name:'Faculty of Arts',hint:'AI fetched',ai:true},
+    {name:'Admin Block',hint:'AI fetched',ai:true},
+  ];
+  return (
+    <div style={{width:'100%',height:'100%',background:C.mist,display:'flex',flexDirection:'column',fontFamily:F}}>
+      <div style={{padding:'10px 14px',borderBottom:border}}>
+        <T size={10} weight={500} color={C.bark} style={{letterSpacing:1,marginBottom:4}}>YOU ARE INSIDE</T>
+        <T size={18} weight={700} color={C.leaf}>University of Hanoi</T>
+        <T size={12} color={C.bark} style={{marginTop:2}}>Large campus · sub-places detected</T>
+      </div>
+      <div style={{position:'relative',margin:'8px 12px 0'}}>
+        <Map h={108}/>
+        {[{l:'Library',x:'18%',y:'36%'},{l:'Clock',x:'54%',y:'20%'},{l:'Hall A',x:'66%',y:'56%'}].map(p=>(
+          <div key={p.l} style={{position:'absolute',left:p.x,top:p.y,background:'rgba(245,247,242,0.92)',borderRadius:8,padding:'2px 7px',border}}>
+            <T size={9} color={C.leaf}>{p.l}</T>
+          </div>
+        ))}
+      </div>
+      <div style={{padding:'8px 14px 4px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <T size={11} weight={500} color={C.bark} style={{letterSpacing:0.5}}>WHERE ARE YOU RIGHT NOW?</T>
+        <T size={11} color={C.teal} style={{cursor:'pointer'}}>Not sure</T>
+      </div>
+      <div style={{flex:1,padding:'0 12px',display:'flex',flexDirection:'column',gap:5,overflowY:'auto'}}>
+        {places.map(p=>(
+          <div key={p.name} onClick={()=>setSel(p.name)} style={{padding:'9px 12px',borderRadius:10,border:sel===p.name?borderT:border,background:sel===p.name?'rgba(42,117,96,0.06)':'white',display:'flex',alignItems:'center',gap:10,cursor:'pointer'}}>
+            <div style={{width:18,height:18,borderRadius:'50%',border:sel===p.name?`2px solid ${C.teal}`:'2px solid rgba(28,39,32,0.2)',background:sel===p.name?C.teal:'transparent',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              {sel===p.name && <div style={{width:6,height:6,borderRadius:'50%',background:C.mist}}/>}
+            </div>
+            <div style={{flex:1}}>
+              <T size={13} weight={600} color={C.leaf}>{p.name}</T>
+              <div style={{display:'flex',alignItems:'center',gap:5,marginTop:2}}>
+                {p.ai && <div style={{padding:'1px 6px',background:C.mistBg,borderRadius:4,border}}><T size={9} color={C.bark}>AI fetched</T></div>}
+                <T size={10} color={C.bark}>{p.hint}</T>
+              </div>
+            </div>
+            {sel===p.name && <div style={{color:C.teal}}>{Ico.check}</div>}
+          </div>
+        ))}
+      </div>
+      <div style={{padding:'10px 14px',borderTop:border}}>
+        <div onClick={()=>setNarrating(p=>!p)} style={{background:narrating?'rgba(42,117,96,0.1)':C.teal,border:narrating?borderT:'none',borderRadius:14,padding:'12px 20px',textAlign:'center',cursor:'pointer'}}>
+          <T size={14} weight={600} color={narrating?C.teal:C.mist}>{narrating?'Pause Narrative':'Start Narrative here'}</T>
+          <T size={10} color={narrating?C.teal:'rgba(245,247,242,0.65)'} style={{marginTop:2}}>
+            {narrating?'Narrating '+sel:'Guide will focus on '+sel}
+          </T>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// APP
+// ─────────────────────────────────────────────────────────────────────────────
+const App = () => {
+  const Frame = ({children, dark=false}) => (
+    <IOSDevice dark={dark} width={280} height={560}>
+      <div style={{width:'100%',height:'100%',overflow:'hidden',display:'flex',flexDirection:'column'}}>
+        {children}
+      </div>
+    </IOSDevice>
+  );
+
+  return (
+    <DesignCanvas>
+
+      <DCSection id="s1" title="Screen 1 — Main Map + Audio Guide">
+        <DCArtboard id="s1a" label="A · Light, content-first" width={280} height={560}>
+          <Frame><WithNav navActive={0} bg={C.mist}><S1A/></WithNav></Frame>
+        </DCArtboard>
+        <DCArtboard id="s1b" label="B · Dark, Strava metrics" width={280} height={560}>
+          <Frame dark><WithNav navActive={0} bg={C.leaf}><S1B/></WithNav></Frame>
+        </DCArtboard>
+        <DCArtboard id="s1c" label="C · Floating cards, approach-first" width={280} height={560}>
+          <Frame><WithNav navActive={0} bg={C.mistBg}><S1C/></WithNav></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="s2" title="Screen 2 — Voice Input">
+        <DCArtboard id="s2a" label="A · Full-screen mic" width={280} height={560}>
+          <Frame dark><WithNav navActive={0} bg={C.leaf}><S2A/></WithNav></Frame>
+        </DCArtboard>
+        <DCArtboard id="s2b" label="B · Suggested questions" width={280} height={560}>
+          <Frame><WithNav navActive={0} bg={C.mist}><S2B/></WithNav></Frame>
+        </DCArtboard>
+        <DCArtboard id="s2c" label="C · Chat conversation" width={280} height={560}>
+          <Frame dark><WithNav navActive={0} bg={C.leaf}><S2C/></WithNav></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="s3" title="Screen 3 — POI Detail / Audio Player">
+        <DCArtboard id="s3a" label="A · Full detail + Info/Narrative/History tabs" width={280} height={560}>
+          <Frame><WithNav navActive={1} bg={C.mist}><S3A/></WithNav></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="s4" title="Screen 4 — Gem Discovery">
+        <DCArtboard id="s4a" label="A · Map + list hybrid" width={280} height={560}>
+          <Frame><WithNav navActive={1} bg={C.mist}><S4A/></WithNav></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="s5" title="Screen 5 — Onboarding: Narrative Style">
+        <DCArtboard id="s5a" label="A · Dark, mode selection" width={280} height={560}>
+          <Frame dark><S5A/></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="s6" title="Screen 6 — Walking Mode + Narrative Toggle">
+        <DCArtboard id="s6a" label="A · Dark, toggle center + radar" width={280} height={560}>
+          <Frame dark><WithNav navActive={0} bg={C.leaf}><S6A/></WithNav></Frame>
+        </DCArtboard>
+        <DCArtboard id="s6b" label="B · Light, sub-place chips + toggle" width={280} height={560}>
+          <Frame><WithNav navActive={0} bg={C.mist}><S6B/></WithNav></Frame>
+        </DCArtboard>
+        <DCArtboard id="s6c" label="C · Minimal dark, gem name + toggle" width={280} height={560}>
+          <Frame dark><WithNav navActive={0} bg={C.canopy}><S6C/></WithNav></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="s7" title="Screen 7 — Onboarding: Auto-Audio + Leading Instructions">
+        <DCArtboard id="s7a" label="A · Toggles + AI notice" width={280} height={560}>
+          <Frame dark><S7A/></Frame>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="s8" title="Screen 8 — Sub-Place Selection">
+        <DCArtboard id="s8a" label="A · University campus · AI-fetched places" width={280} height={560}>
+          <Frame><WithNav navActive={1} bg={C.mist}><S8A/></WithNav></Frame>
+        </DCArtboard>
+      </DCSection>
+
+    </DesignCanvas>
+  );
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+<div id="root"></div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { colors, borders } from '../tokens'
+import { useState, useEffect, useRef } from 'react'
+import { colors } from '../tokens'
 import { ModePills } from '../primitives/mode-pills'
 import { useAppContext } from '../context/app-context'
 
@@ -9,15 +9,7 @@ interface NarrativeTabProps {
   dark?: boolean
 }
 
-interface ElevenVoice {
-  voice_id: string
-  name: string
-  category: string
-  preview_url: string
-  labels: Record<string, string>
-}
-
-// ── Slider primitive ───────────────────────────────────────────────────────
+// ── Slider ─────────────────────────────────────────────────────────────────
 
 function Slider({
   label, value, min, max, step, onChange, dark, format,
@@ -26,24 +18,22 @@ function Slider({
   onChange: (v: number) => void; dark: boolean; format?: (v: number) => string
 }) {
   const safeValue = value ?? 0
-  const display = format ? format(safeValue) : safeValue.toFixed(2)
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
         <span style={{ fontSize: 11, color: colors.bark }}>{label}</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: colors.teal }}>{display}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: colors.teal }}>
+          {format ? format(safeValue) : safeValue.toFixed(2)}
+        </span>
       </div>
       <input
-        type="range"
-        min={min} max={max} step={step} value={safeValue}
+        type="range" min={min} max={max} step={step} value={safeValue}
         onChange={e => onChange(parseFloat(e.target.value))}
         style={{ width: '100%', accentColor: colors.teal }}
       />
     </div>
   )
 }
-
-// ── Section header ─────────────────────────────────────────────────────────
 
 function SectionLabel({ title }: { title: string }) {
   return (
@@ -59,21 +49,24 @@ function SectionLabel({ title }: { title: string }) {
 // ── Phase indicator ────────────────────────────────────────────────────────
 
 const PHASE_LABELS: Record<string, string> = {
-  'generating-text': 'Generating text…',
-  'generating-audio': 'Generating audio…',
-  'playing': 'Playing…',
+  searching: 'Searching knowledge…',
+  'generating-text': 'Writing narrative…',
+  'generating-audio': 'Synthesizing…',
+  playing: 'Speaking…',
 }
 
 function PhaseIndicator({ phase, dark }: { phase: string; dark: boolean }) {
   const label = PHASE_LABELS[phase]
   if (!label) return null
-  const isAudio = phase === 'generating-audio'
   const isPlaying = phase === 'playing'
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: isPlaying ? 'rgba(42,117,96,0.12)' : (dark ? 'rgba(245,247,242,0.05)' : 'rgba(28,39,32,0.04)') }}>
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+      borderRadius: 8,
+      background: isPlaying ? 'rgba(42,117,96,0.12)' : (dark ? 'rgba(245,247,242,0.05)' : 'rgba(28,39,32,0.04)'),
+    }}>
       <div style={{ display: 'flex', gap: 3 }}>
         {isPlaying ? (
-          // Waveform bars
           [5, 9, 14, 10, 16, 11, 7].map((h, i) => (
             <div key={i} style={{
               width: 3, height: h, background: colors.teal, borderRadius: 2,
@@ -82,10 +75,9 @@ function PhaseIndicator({ phase, dark }: { phase: string; dark: boolean }) {
             }} />
           ))
         ) : (
-          // Spinner dots
           [0, 1, 2].map(i => (
             <div key={i} style={{
-              width: 5, height: 5, borderRadius: '50%', background: isAudio ? colors.gold : colors.teal,
+              width: 5, height: 5, borderRadius: '50%', background: colors.teal,
               animation: `bounce 1s ${i * 0.15}s infinite`,
             }} />
           ))
@@ -98,79 +90,93 @@ function PhaseIndicator({ phase, dark }: { phase: string; dark: boolean }) {
   )
 }
 
+// ── Web Speech API helpers ─────────────────────────────────────────────────
+
+function pickDefaultVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  return (
+    voices.find(v => v.lang.startsWith('en') && v.localService) ??
+    voices.find(v => v.lang.startsWith('en')) ??
+    voices[0] ?? null
+  )
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export function NarrativeTab({ dark = false }: NarrativeTabProps) {
   const {
-    nearestPOI, narrativeMode, setNarrativeMode,
+    nearestPOI, setNarrativeMode,
     voiceId, setVoiceId,
-    voiceStability: voiceStabilityRaw, setVoiceStability,
-    voiceSimilarity: voiceSimilarityRaw, setVoiceSimilarity,
-    voiceStyle: voiceStyleRaw, setVoiceStyle,
     voiceSpeed: voiceSpeedRaw, setVoiceSpeed,
+    voiceStability: voicePitchRaw, setVoiceStability,
     customInstruction, setCustomInstruction,
     autoNarrate, narratorPhase, currentNarrativeText,
     theme,
   } = useAppContext()
 
-  const voiceStability = voiceStabilityRaw ?? 0.5
-  const voiceSimilarity = voiceSimilarityRaw ?? 0.75
-  const voiceStyle = voiceStyleRaw ?? 0.3
   const voiceSpeed = voiceSpeedRaw ?? 1.0
+  const voicePitch = voicePitchRaw ?? 1.0
 
   const isDark = dark || theme === 'dark'
 
-  // Local UI state
-  const [mode, setMode] = useState<'Story' | 'Facts' | 'Secrets'>('Story')
-  const [narrativeText, setNarrativeText] = useState('')
-  const [displayText, setDisplayText] = useState('')
-  const [charIndex, setCharIndex] = useState(0)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [audioUrl, setAudioUrl] = useState<string | null>(null)
-  const [voices, setVoices] = useState<ElevenVoice[]>([])
-  const [voicesLoading, setVoicesLoading] = useState(false)
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [voicesLoading, setVoicesLoading] = useState(true)
   const [showVoicePicker, setShowVoicePicker] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
+  const [mode, setMode] = useState<'Story' | 'Facts' | 'Secrets'>('Story')
+  const [displayText, setDisplayText] = useState('')
+  const [charIndex, setCharIndex] = useState(0)
+  const [narrativeText, setNarrativeText] = useState('')
   const [instructionInput, setInstructionInput] = useState(customInstruction ?? '')
-  const [error, setError] = useState<string | null>(null)
-  const [manualPhase, setManualPhase] = useState<'idle' | 'generating-text' | 'generating-audio' | 'playing'>('idle')
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const abortRef = useRef<AbortController | null>(null)
+  const selectedVoice = voices.find(v => v.voiceURI === voiceId) ?? voices[0] ?? null
 
-  const selectedVoice = voices.find(v => v.voice_id === voiceId)
+  // Load voices
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+    const load = () => {
+      const v = window.speechSynthesis.getVoices()
+      if (v.length === 0) return false
+      setVoices(v)
+      setVoicesLoading(false)
+      if (!voiceId) {
+        const def = pickDefaultVoice(v)
+        if (def) setVoiceId(def.voiceURI)
+      }
+      return true
+    }
+    if (load()) return
+    window.speechSynthesis.addEventListener('voiceschanged', load)
+    const timers = [setTimeout(load, 100), setTimeout(load, 500), setTimeout(load, 1500)]
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', load)
+      timers.forEach(clearTimeout)
+    }
+  }, [voiceId, setVoiceId])
 
-  // The effective phase to show — auto-narrator takes priority when active
-  const effectivePhase = autoNarrate ? narratorPhase : manualPhase
-
-  // Sync mode → context narrativeMode
+  // Sync mode → context
   useEffect(() => {
     setNarrativeMode(mode.toLowerCase() as any)
   }, [mode, setNarrativeMode])
 
-  // Reset when POI or mode changes
+  // Reset on POI / mode change
   useEffect(() => {
     setNarrativeText('')
     setDisplayText('')
     setCharIndex(0)
-    setAudioUrl(null)
-    setError(null)
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
   }, [nearestPOI?.name, mode])
 
-  // Feed auto-narrator text into the typewriter when a new cycle produces text
+  // Feed auto-narrator text into typewriter
   const prevAutoTextRef = useRef('')
   useEffect(() => {
-    if (!autoNarrate || !currentNarrativeText) return
+    if (!currentNarrativeText) return
     if (currentNarrativeText === prevAutoTextRef.current) return
     prevAutoTextRef.current = currentNarrativeText
     setNarrativeText(currentNarrativeText)
     setDisplayText('')
     setCharIndex(0)
-  }, [autoNarrate, currentNarrativeText])
+  }, [currentNarrativeText])
 
-  // Typewriter effect
+  // Typewriter
   useEffect(() => {
     if (!narrativeText || charIndex >= narrativeText.length) return
     const t = setTimeout(() => {
@@ -179,100 +185,6 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
     }, 22)
     return () => clearTimeout(t)
   }, [charIndex, narrativeText])
-
-  // Load voices once
-  useEffect(() => {
-    if (voices.length > 0) return
-    setVoicesLoading(true)
-    fetch('/api/ai/voices')
-      .then(r => r.json())
-      .then(d => setVoices(d.voices ?? []))
-      .catch(() => {})
-      .finally(() => setVoicesLoading(false))
-  }, [])
-
-  const generate = useCallback(async () => {
-    if (!nearestPOI || isGenerating) return
-    abortRef.current?.abort()
-    abortRef.current = new AbortController()
-
-    setIsGenerating(true)
-    setManualPhase('generating-text')
-    setNarrativeText('')
-    setDisplayText('')
-    setCharIndex(0)
-    setAudioUrl(null)
-    setError(null)
-
-    try {
-      // 1. Generate narrative text via OpenRouter
-      const textRes = await fetch('/api/ai/narrate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: abortRef.current.signal,
-        body: JSON.stringify({
-          poiName: nearestPOI.name,
-          poiType: nearestPOI.type,
-          poiAddress: nearestPOI.address,
-          poiTags: nearestPOI.tags,
-          mode: mode.toLowerCase(),
-          customInstruction: (instructionInput ?? '').trim() || undefined,
-        }),
-      })
-      const { text, error: textErr } = await textRes.json()
-      if (textErr || !text) throw new Error(textErr ?? 'No text returned')
-
-      setNarrativeText(text)
-      setCharIndex(0)
-
-      // 2. Generate speech via ElevenLabs
-      setManualPhase('generating-audio')
-      const audioRes = await fetch('/api/ai/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: abortRef.current.signal,
-        body: JSON.stringify({
-          text,
-          voiceId,
-          stability: voiceStability,
-          similarityBoost: voiceSimilarity,
-          style: voiceStyle,
-          speed: voiceSpeed,
-        }),
-      })
-      if (!audioRes.ok) throw new Error('TTS failed')
-
-      const blob = await audioRes.blob()
-      const url = URL.createObjectURL(blob)
-      setAudioUrl(url)
-
-      // Auto-play
-      setManualPhase('playing')
-      const audio = new Audio(url)
-      audioRef.current = audio
-      audio.onended = () => { setIsPlaying(false); setManualPhase('idle') }
-      audio.play()
-      setIsPlaying(true)
-    } catch (e: any) {
-      if (e?.name !== 'AbortError') setError(e?.message ?? 'Failed')
-      setManualPhase('idle')
-    } finally {
-      setIsGenerating(false)
-    }
-  }, [nearestPOI, mode, voiceId, voiceStability, voiceSimilarity, voiceStyle, voiceSpeed, instructionInput, isGenerating])
-
-  const togglePlayback = useCallback(() => {
-    if (!audioRef.current) return
-    if (isPlaying) {
-      audioRef.current.pause()
-      setIsPlaying(false)
-      setManualPhase('idle')
-    } else {
-      audioRef.current.play()
-      setIsPlaying(true)
-      setManualPhase('playing')
-    }
-  }, [isPlaying])
 
   if (!nearestPOI) {
     return (
@@ -287,8 +199,7 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
   const cardBg = isDark ? 'rgba(245,247,242,0.03)' : 'rgba(28,39,32,0.02)'
   const cardBorder = isDark ? '1px solid rgba(245,247,242,0.08)' : '1px solid rgba(28,39,32,0.06)'
 
-  const isAutoActive = autoNarrate && narratorPhase !== 'idle'
-  const isBusy = isGenerating || isAutoActive
+  const isActive = narratorPhase !== 'idle'
 
   return (
     <div style={{ padding: '12px 14px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -304,15 +215,13 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
       {/* Mode pills */}
       <ModePills mode={mode} setMode={setMode} dark={isDark} />
 
-      {/* Phase indicator — shown when auto-narrator is running */}
-      {effectivePhase !== 'idle' && (
-        <PhaseIndicator phase={effectivePhase} dark={isDark} />
-      )}
+      {/* Phase indicator */}
+      {isActive && <PhaseIndicator phase={narratorPhase} dark={isDark} />}
 
-      {/* Narrative text area */}
-      <div style={{ minHeight: 90, padding: 12, background: cardBg, borderRadius: 12, border: cardBorder, position: 'relative' }}>
-        {isGenerating && !displayText ? (
-          <div style={{ display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'center', height: 70 }}>
+      {/* Narrative display */}
+      <div style={{ minHeight: 100, padding: 14, background: cardBg, borderRadius: 14, border: cardBorder }}>
+        {isActive && !displayText ? (
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'center', height: 72 }}>
             {[0, 1, 2].map(i => (
               <div key={i} style={{
                 width: 6, height: 6, borderRadius: '50%', background: colors.teal,
@@ -321,67 +230,25 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
             ))}
           </div>
         ) : (
-          <div style={{ fontSize: 13, lineHeight: 1.6, color: textPrimary, fontFamily: 'serif', fontStyle: 'italic' }}>
-            {displayText || <span style={{ color: colors.bark, fontStyle: 'normal', fontSize: 12 }}>
-              {autoNarrate
-                ? (narratorPhase === 'generating-text' ? 'Writing narrative…'
-                  : narratorPhase === 'generating-audio' ? 'Synthesizing voice…'
-                  : 'Auto-narrator will begin shortly…')
-                : 'Tap Generate to narrate this place'}
-            </span>}
+          <div style={{ fontSize: 13, lineHeight: 1.7, color: textPrimary, fontFamily: 'serif', fontStyle: 'italic' }}>
+            {displayText || (
+              <span style={{ color: colors.bark, fontStyle: 'normal', fontSize: 12 }}>
+                {autoNarrate ? 'Auto-narrator will begin shortly…' : 'Enable auto-narrator to hear this place…'}
+              </span>
+            )}
             {charIndex < narrativeText.length && (
-              <span style={{ display: 'inline-block', width: 2, height: 13, background: colors.teal, marginLeft: 2, verticalAlign: 'middle', animation: 'blink 1s infinite' }} />
+              <span style={{
+                display: 'inline-block', width: 2, height: 13, background: colors.teal,
+                marginLeft: 2, verticalAlign: 'middle', animation: 'blink 1s infinite',
+              }} />
             )}
           </div>
         )}
       </div>
 
-      {error && (
-        <div style={{ fontSize: 11, color: '#e57373', padding: '6px 10px', borderRadius: 8, background: 'rgba(229,115,115,0.1)' }}>
-          {error}
-        </div>
-      )}
-
-      {/* Controls row */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        {/* Generate — disabled when auto-narrator is active */}
-        <button
-          onClick={generate}
-          disabled={isBusy}
-          title={isAutoActive ? 'Auto-narrator is running — pause it first' : undefined}
-          style={{
-            flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
-            background: isBusy ? colors.bark : colors.teal,
-            color: colors.mist, fontSize: 12, fontWeight: 600,
-            cursor: isBusy ? 'not-allowed' : 'pointer',
-            opacity: isBusy ? 0.6 : 1,
-          }}
-        >
-          {isGenerating
-            ? (manualPhase === 'generating-text' ? 'Writing…' : manualPhase === 'generating-audio' ? 'Synthesizing…' : 'Generating…')
-            : isAutoActive
-            ? 'Auto-narrator active'
-            : '✦ Generate'}
-        </button>
-
-        {/* Play/Pause — manual audio only */}
-        {audioUrl && !isAutoActive && (
-          <button
-            onClick={togglePlayback}
-            style={{
-              width: 42, borderRadius: 10, border: cardBorder, background: cardBg,
-              color: textPrimary, fontSize: 16, cursor: 'pointer', display: 'flex',
-              alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            {isPlaying ? '⏸' : '▶'}
-          </button>
-        )}
-      </div>
-
       <div style={{ height: 1, background: divider }} />
 
-      {/* ── Voice selector ── */}
+      {/* Voice selector */}
       <div>
         <SectionLabel title="Voice" />
         <div
@@ -393,11 +260,11 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
         >
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: textPrimary }}>
-              {voicesLoading ? 'Loading voices…' : selectedVoice?.name ?? 'Sarah'}
+              {voicesLoading ? 'Loading voices…' : (selectedVoice?.name ?? 'Default')}
             </div>
             {selectedVoice && (
               <div style={{ fontSize: 10, color: colors.bark, marginTop: 1 }}>
-                {selectedVoice.category} · {Object.values(selectedVoice.labels ?? {}).slice(0, 2).join(', ')}
+                {selectedVoice.lang} · {selectedVoice.localService ? 'Local' : 'Network'}
               </div>
             )}
           </div>
@@ -406,24 +273,26 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
 
         {showVoicePicker && voices.length > 0 && (
           <div style={{
-            maxHeight: 220, overflowY: 'auto', marginTop: 6, borderRadius: 10,
+            maxHeight: 200, overflowY: 'auto', marginTop: 6, borderRadius: 10,
             border: cardBorder, background: isDark ? 'rgba(14,24,16,0.95)' : 'white',
           }}>
             {voices.map(v => (
               <div
-                key={v.voice_id}
-                onClick={() => { setVoiceId(v.voice_id); setShowVoicePicker(false) }}
+                key={v.voiceURI}
+                onClick={() => { setVoiceId(v.voiceURI); setShowVoicePicker(false) }}
                 style={{
                   padding: '9px 12px', cursor: 'pointer', borderBottom: `1px solid ${divider}`,
-                  background: v.voice_id === voiceId ? (isDark ? 'rgba(42,117,96,0.15)' : 'rgba(42,117,96,0.07)') : 'transparent',
+                  background: v.voiceURI === voiceId
+                    ? (isDark ? 'rgba(42,117,96,0.15)' : 'rgba(42,117,96,0.07)')
+                    : 'transparent',
                 }}
               >
-                <div style={{ fontSize: 12, fontWeight: v.voice_id === voiceId ? 600 : 400, color: textPrimary }}>
+                <div style={{ fontSize: 12, fontWeight: v.voiceURI === voiceId ? 600 : 400, color: textPrimary }}>
                   {v.name}
-                  {v.voice_id === voiceId && <span style={{ color: colors.teal, marginLeft: 6 }}>✓</span>}
+                  {v.voiceURI === voiceId && <span style={{ color: colors.teal, marginLeft: 6 }}>✓</span>}
                 </div>
                 <div style={{ fontSize: 10, color: colors.bark }}>
-                  {v.category} · {Object.values(v.labels ?? {}).slice(0, 3).join(', ')}
+                  {v.lang} · {v.localService ? 'Local' : 'Network'}
                 </div>
               </div>
             ))}
@@ -431,7 +300,7 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
         )}
       </div>
 
-      {/* ── Voice config ── */}
+      {/* Voice settings */}
       <div>
         <div
           onClick={() => setShowConfig(p => !p)}
@@ -442,17 +311,15 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
         </div>
         {showConfig && (
           <div style={{ padding: '8px 0' }}>
-            <Slider label="Stability" value={voiceStability} min={0} max={1} step={0.01} onChange={setVoiceStability} dark={isDark} />
-            <Slider label="Clarity / Similarity" value={voiceSimilarity} min={0} max={1} step={0.01} onChange={setVoiceSimilarity} dark={isDark} />
-            <Slider label="Style Exaggeration" value={voiceStyle} min={0} max={1} step={0.01} onChange={setVoiceStyle} dark={isDark} />
-            <Slider label="Speed" value={voiceSpeed} min={0.7} max={1.2} step={0.05} onChange={setVoiceSpeed} dark={isDark} format={v => `${v.toFixed(2)}×`} />
+            <Slider label="Pitch" value={voicePitch} min={0} max={2} step={0.05} onChange={setVoiceStability} dark={isDark} format={v => v.toFixed(2)} />
+            <Slider label="Speed" value={voiceSpeed} min={0.5} max={2} step={0.05} onChange={setVoiceSpeed} dark={isDark} format={v => `${v.toFixed(2)}×`} />
           </div>
         )}
       </div>
 
       <div style={{ height: 1, background: divider }} />
 
-      {/* ── Custom instruction ── */}
+      {/* Custom instruction */}
       <div>
         <SectionLabel title="Custom Instruction" />
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

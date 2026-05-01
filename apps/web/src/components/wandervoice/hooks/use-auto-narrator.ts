@@ -11,9 +11,7 @@ export function useAutoNarrator() {
     nearestPOI,
     narrativeMode,
     voiceId,
-    voiceStability,
-    voiceSimilarity,
-    voiceStyle,
+    voiceStability,  // repurposed as pitch
     voiceSpeed,
     customInstruction,
     addNarrativeHistory,
@@ -22,17 +20,15 @@ export function useAutoNarrator() {
   } = useAppContext()
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   const runningRef = useRef(false)
   const abortRef = useRef<AbortController | null>(null)
 
-  const stopAudio = useCallback(() => {
+  const stopSpeech = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current = null
-    }
+    if (typeof window !== 'undefined') window.speechSynthesis?.cancel()
+    utteranceRef.current = null
     if (timerRef.current) {
       clearTimeout(timerRef.current)
       timerRef.current = null
@@ -49,7 +45,11 @@ export function useAutoNarrator() {
     const signal = abortRef.current.signal
 
     try {
-      // 1. Generate narrative text
+      // 1. Search for place knowledge
+      setNarratorPhase('searching')
+      // (search happens inside /api/ai/narrate agentic loop)
+
+      // 2. Generate narrative text
       setNarratorPhase('generating-text')
       const modeLabel = narrativeMode.charAt(0).toUpperCase() + narrativeMode.slice(1)
 
@@ -67,31 +67,11 @@ export function useAutoNarrator() {
         }),
       })
       const { text } = await textRes.json()
-      if (!text) { runningRef.current = false; setNarratorPhase('idle'); return }
+      if (!text || signal.aborted) { runningRef.current = false; setNarratorPhase('idle'); return }
 
       setCurrentNarrativeText(text)
 
-      // 2. Synthesize speech
-      setNarratorPhase('generating-audio')
-      const audioRes = await fetch('/api/ai/speak', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal,
-        body: JSON.stringify({
-          text,
-          voiceId: voiceId ?? 'EXAVITQu4vr4xnSDxMaL',
-          stability: voiceStability ?? 0.5,
-          similarityBoost: voiceSimilarity ?? 0.75,
-          style: voiceStyle ?? 0.3,
-          speed: voiceSpeed ?? 1.0,
-        }),
-      })
-      if (!audioRes.ok) { runningRef.current = false; setNarratorPhase('idle'); return }
-
-      const blob = await audioRes.blob()
-      const url = URL.createObjectURL(blob)
-
-      // 3. Save to history
+      // 2. Save to history (no audioUrl — Web Speech API has no blob)
       const now = new Date()
       const timeLabel = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
       const snippet = text.length > 80 ? text.slice(0, 80).trimEnd() + '…' : text
@@ -103,41 +83,56 @@ export function useAutoNarrator() {
         mode: modeLabel,
         snippet,
         fullText: text,
-        audioUrl: url,
         timestamp: now.getTime(),
       }
       addNarrativeHistory(entry)
 
-      // 4. Play audio
-      setNarratorPhase('playing')
-      const audio = new Audio(url)
-      audioRef.current = audio
+      // 3. Speak via Web Speech API
+      setNarratorPhase('generating-audio')
+      if (signal.aborted) { runningRef.current = false; setNarratorPhase('idle'); return }
 
       await new Promise<void>((resolve) => {
-        audio.onended = () => resolve()
-        audio.onerror = () => resolve()
-        audio.play().catch(() => resolve())
+        if (!window.speechSynthesis) { resolve(); return }
+        window.speechSynthesis.cancel()
+
+        const utt = new SpeechSynthesisUtterance(text)
+
+        // Resolve voice from stored voiceURI
+        const voices = window.speechSynthesis.getVoices()
+        const voice = voices.find(v => v.voiceURI === voiceId) ?? voices[0]
+        if (voice) utt.voice = voice
+        utt.rate = voiceSpeed ?? 1.0
+        utt.pitch = voiceStability ?? 1.0  // stability slider → pitch
+
+        utt.onstart = () => setNarratorPhase('playing')
+        utt.onend = () => resolve()
+        utt.onerror = () => resolve()
+
+        utteranceRef.current = utt
+
+        // Abort integration: cancel speech if fetch was aborted mid-way
+        signal.addEventListener('abort', () => {
+          window.speechSynthesis?.cancel()
+          resolve()
+        })
+
+        window.speechSynthesis.speak(utt)
       })
 
       runningRef.current = false
       setNarratorPhase('idle')
     } catch (e: any) {
       runningRef.current = false
-      // AbortError is expected when user stops narration — don't log as error
-      if (e?.name !== 'AbortError') {
-        setNarratorPhase('idle')
-      }
+      if (e?.name !== 'AbortError') setNarratorPhase('idle')
     }
-  }, [nearestPOI, narrativeMode, voiceId, voiceStability, voiceSimilarity, voiceStyle, voiceSpeed, customInstruction, addNarrativeHistory, setNarratorPhase, setCurrentNarrativeText])
+  }, [nearestPOI, narrativeMode, voiceId, voiceStability, voiceSpeed, customInstruction, addNarrativeHistory, setNarratorPhase, setCurrentNarrativeText])
 
-  // Main loop effect
+  // Main loop
   useEffect(() => {
     if (!autoNarrate) {
-      stopAudio()
+      stopSpeech()
       return
     }
-
-    // Guard: no POI yet — don't start, wait
     if (!nearestPOI) return
 
     let cancelled = false
@@ -153,7 +148,7 @@ export function useAutoNarrator() {
 
     return () => {
       cancelled = true
-      stopAudio()
+      stopSpeech()
     }
-  }, [autoNarrate, nearestPOI, runCycle, stopAudio])
+  }, [autoNarrate, nearestPOI, runCycle, stopSpeech])
 }

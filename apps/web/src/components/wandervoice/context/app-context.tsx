@@ -8,7 +8,7 @@ export type NarrativeMode = 'story' | 'facts' | 'secrets'
 
 export type ThemeMode = 'light' | 'dark'
 
-export type NarratorPhase = 'idle' | 'generating-text' | 'generating-audio' | 'playing'
+export type NarratorPhase = 'idle' | 'searching' | 'generating-text' | 'generating-audio' | 'playing'
 
 export interface POI {
   lat: number
@@ -211,7 +211,7 @@ const INITIAL_STATE: AppState = {
   autoAudio: true,
   leadingCues: true,
   theme: 'dark',
-  voiceId: 'EXAVITQu4vr4xnSDxMaL', // ElevenLabs "Sarah" — warm, clear
+  voiceId: '', // populated at runtime from window.speechSynthesis.getVoices()
   voiceStability: 0.5,
   voiceSimilarity: 0.75,
   voiceStyle: 0.3,

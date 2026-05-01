@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type FC } from 'react'
 import { colors, borders } from '../tokens'
 import { MapPlaceholder } from '../primitives/map-placeholder'
 import { MetricStrip } from '../primitives/metric-strip'
@@ -28,9 +28,147 @@ function StatusBar({ dark = false }: { dark?: boolean }) {
 const WAVEFORM_HEIGHTS = [5, 10, 18, 14, 22, 18, 12, 20, 22, 16, 10, 18, 14, 8]
 
 const PHASE_HINT: Partial<Record<NarratorPhase, string>> = {
+  'searching': 'Searching…',
   'generating-text': 'Writing…',
   'generating-audio': 'Synthesizing…',
   'playing': 'Speaking…',
+}
+
+// ── Search bubble — shown in centre of map during knowledge lookup ─────────
+
+const SEARCH_STEPS = [
+  { icon: '🌐', label: 'Wikipedia', detail: 'Fetching article…' },
+  { icon: '🔍', label: 'Web search', detail: 'Tavily lookup…' },
+  { icon: '✦', label: 'AI grounding', detail: 'Merging knowledge…' },
+]
+
+function SearchBubble({ poi, dark }: { poi: string; dark: boolean }) {
+  const [step, setStep] = useState(0)
+
+  useEffect(() => {
+    setStep(0)
+    const t1 = setTimeout(() => setStep(1), 900)
+    const t2 = setTimeout(() => setStep(2), 1900)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [poi])
+
+  const bg = dark ? 'rgba(22,34,24,0.96)' : 'rgba(255,255,255,0.96)'
+  const border = dark ? '1px solid rgba(245,247,242,0.12)' : '1px solid rgba(28,39,32,0.1)'
+  const textPrimary = dark ? colors.mist : colors.leaf
+
+  return (
+    <div style={{
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 60,
+      width: 220,
+      background: bg,
+      borderRadius: 20,
+      border,
+      boxShadow: dark
+        ? '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(42,117,96,0.2)'
+        : '0 8px 32px rgba(28,39,32,0.15), 0 0 0 1px rgba(42,117,96,0.1)',
+      padding: '16px 18px 14px',
+      backdropFilter: 'blur(20px)',
+      animation: 'bubbleIn 0.35s cubic-bezier(0.16,1,0.3,1)',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: 8,
+          background: 'rgba(42,117,96,0.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span style={{ fontSize: 14 }}>🔎</span>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: colors.teal, letterSpacing: 0.5 }}>
+            KNOWLEDGE SEARCH
+          </div>
+          <div style={{ fontSize: 10, color: colors.bark, marginTop: 1, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {poi}
+          </div>
+        </div>
+      </div>
+
+      {/* Steps */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {SEARCH_STEPS.map((s, i) => {
+          const done = i < step
+          const active = i === step
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              opacity: i > step ? 0.3 : 1,
+              transition: 'opacity 0.4s',
+            }}>
+              {/* Status dot */}
+              <div style={{
+                width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                background: done
+                  ? colors.teal
+                  : active
+                  ? 'rgba(42,117,96,0.15)'
+                  : (dark ? 'rgba(245,247,242,0.06)' : 'rgba(28,39,32,0.06)'),
+                border: active ? `1.5px solid ${colors.teal}` : '1.5px solid transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.3s',
+              }}>
+                {done ? (
+                  <span style={{ fontSize: 10, color: colors.mist }}>✓</span>
+                ) : active ? (
+                  <div style={{
+                    width: 6, height: 6, borderRadius: '50%', background: colors.teal,
+                    animation: 'pulse 1s infinite',
+                  }} />
+                ) : null}
+              </div>
+
+              {/* Label */}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: active || done ? 600 : 400, color: textPrimary }}>
+                  {s.icon} {s.label}
+                </div>
+                {active && (
+                  <div style={{ fontSize: 10, color: colors.bark, marginTop: 1, animation: 'fadeIn 0.3s' }}>
+                    {s.detail}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ marginTop: 14, height: 2, background: dark ? 'rgba(245,247,242,0.08)' : 'rgba(28,39,32,0.08)', borderRadius: 1, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%',
+          width: `${((step + 1) / SEARCH_STEPS.length) * 100}%`,
+          background: `linear-gradient(90deg, ${colors.teal}, #4CAF88)`,
+          borderRadius: 1,
+          transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
+        }} />
+      </div>
+
+      <style>{`
+        @keyframes bubbleIn {
+          from { opacity: 0; transform: translate(-50%, -48%) scale(0.92); }
+          to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.4); opacity: 0.6; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  )
 }
 
 function FloatingNarrativeButton({
@@ -327,18 +465,23 @@ function POIPanel() {
 }
 
 function ActiveMergedView() {
-  const { navigate, theme, autoNarrate, setAutoNarrate, narratorPhase } = useAppContext()
+  const { navigate, theme, autoNarrate, setAutoNarrate, narratorPhase, nearestPOI } = useAppContext()
   const isDark = theme === 'dark'
   const bg = isDark ? colors.leaf : colors.mistBg
 
   // Mount the auto-narrator loop here so it lives with the walk screen
   useAutoNarrator()
 
+  const isSearching = narratorPhase === 'searching'
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', background: bg, overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'background 0.4s ease' }}>
       <StatusBar dark={isDark} />
       <div style={{ flex: 1, position: 'relative', padding: '0 12px 140px' }}>
         <MapPlaceholder h="auto" dark={isDark} />
+        {isSearching && nearestPOI && (
+          <SearchBubble poi={nearestPOI.name} dark={isDark} />
+        )}
       </div>
 
       <BottomSheet dark={isDark} defaultTab={2} bottomOffset={NAV_HEIGHT}>

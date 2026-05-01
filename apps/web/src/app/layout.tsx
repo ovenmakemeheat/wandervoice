@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "../index.css";
 import Providers from "@/components/providers";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
+const lineSeed = localFont({
+  src: "../../public/fonts/LINESeedSansTH_Rg.ttf",
+  variable: "--font-line-seed",
 });
 
 export const metadata: Metadata = {
@@ -21,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${lineSeed.variable} antialiased`}>
         <Providers>
           <div className="h-svh overflow-hidden">
             {children}

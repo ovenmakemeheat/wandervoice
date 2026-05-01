@@ -467,7 +467,7 @@ export default function PrototypePage() {
         width: '100vw',
         height: '100svh',
         display: 'flex',
-        fontFamily: 'var(--font-inter, "Inter", -apple-system, sans-serif)',
+        fontFamily: 'var(--font-line-seed), sans-serif',
         overflow: 'hidden',
         background: colors.canopy,
       }}

@@ -187,7 +187,7 @@ export function ScreenProfile() {
         {tab === 2 && <SettingsTab />}
       </div>
 
-      <NavBar active={2} />
+      <NavBar active={3} />
     </div>
   )
 }

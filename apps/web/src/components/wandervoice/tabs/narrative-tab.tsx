@@ -57,8 +57,67 @@ export function NarrativeTab({ dark = false }: NarrativeTabProps) {
 
       <ModePills mode={mode} setMode={setMode} dark={dark} />
 
-      <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 4 }}>
-        <NarrativeToggle active={narrating} onToggle={() => setNarrating((p) => !p)} dark={dark} />
+      {/* Personalization Section */}
+      <div style={{ marginTop: 4, marginBottom: 8 }}>
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 500,
+            color: colors.bark,
+            letterSpacing: 1,
+            marginBottom: 8,
+          }}
+        >
+          PERSONALIZATION
+        </div>
+        
+        {/* Quick instruction chips */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+          {['Kid friendly', 'Focus on architecture', 'Speak slower'].map((chip) => (
+            <div
+              key={chip}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 16,
+                border: dark ? borders.borderD : borders.border,
+                background: dark ? 'rgba(245,247,242,0.04)' : 'white',
+                fontSize: 11,
+                color: dark ? colors.mist : colors.leaf,
+                cursor: 'pointer',
+              }}
+            >
+              + {chip}
+            </div>
+          ))}
+        </div>
+
+        {/* Custom instruction input */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '10px 14px',
+            borderRadius: 12,
+            border: dark ? borders.borderD : borders.border,
+            background: dark ? 'rgba(0,0,0,0.2)' : colors.mistBg,
+          }}
+        >
+          <input
+            type="text"
+            placeholder="Add custom instruction..."
+            style={{
+              flex: 1,
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              fontSize: 12,
+              color: dark ? colors.mist : colors.leaf,
+            }}
+          />
+          <div style={{ fontSize: 11, fontWeight: 600, color: colors.teal, cursor: 'pointer' }}>
+            Save
+          </div>
+        </div>
       </div>
 
       {/* Quick suggestions */}

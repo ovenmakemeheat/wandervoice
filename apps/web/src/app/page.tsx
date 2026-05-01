@@ -2,17 +2,14 @@
 
 import { useState, type ReactNode } from 'react'
 import { colors } from '@/components/wandervoice/tokens'
-import { S1A, S1B } from '@/components/wandervoice/screens/screen1'
 import { S2A, S2B, S2C } from '@/components/wandervoice/screens/screen2'
-import { S3A } from '@/components/wandervoice/screens/screen3'
-import { S4A } from '@/components/wandervoice/screens/screen4'
 import { S5A } from '@/components/wandervoice/screens/screen5'
-import { S6A, S6B, S6C } from '@/components/wandervoice/screens/screen6'
 import { S7A } from '@/components/wandervoice/screens/screen7'
-import { S8A } from '@/components/wandervoice/screens/screen8'
 import { ScreenSplash } from '@/components/wandervoice/screens/screen-splash'
 import { ScreenPermsA, ScreenPermsB } from '@/components/wandervoice/screens/screen-perms'
 import { ScreenProfile } from '@/components/wandervoice/screens/screen-profile'
+import { ScreenSmartWalk } from '@/components/wandervoice/screens/screen-smart-walk'
+import { ScreenHome } from '@/components/wandervoice/screens/screen-home'
 
 // ── Screen registry ────────────────────────────────────────────────────────
 
@@ -60,45 +57,18 @@ const SCREENS: ScreenGroup[] = [
     variants: [{ id: 's7a', label: 'Dark · toggles + AI notice', theme: 'dark', component: <S7A /> }],
   },
 
-  // Walking
+  // Core App
   {
-    id: 's6',
-    title: 'Walking Mode',
-    short: 'Walk',
-    variants: [
-      { id: 's6a', label: 'Dark · toggle + radar', theme: 'dark', component: <S6A /> },
-      { id: 's6b', label: 'Light · sub-place chips', theme: 'light', component: <S6B /> },
-      { id: 's6c', label: 'Dark · minimal', theme: 'dark', component: <S6C /> },
-    ],
+    id: 'home',
+    title: 'Home',
+    short: 'Home',
+    variants: [{ id: 'home-a', label: 'Light · personalized', theme: 'light', component: <ScreenHome /> }],
   },
   {
-    id: 's8',
-    title: 'Sub-Place Selection',
-    short: 'Place',
-    variants: [{ id: 's8a', label: 'Light · campus places', theme: 'light', component: <S8A /> }],
-  },
-  {
-    id: 's1',
-    title: 'Main Map · Walking',
-    short: 'Map',
-    variants: [
-      { id: 's1a', label: 'Light · content-first', theme: 'light', component: <S1A /> },
-      { id: 's1b', label: 'Dark · Strava metrics', theme: 'dark', component: <S1B /> },
-    ],
-  },
-
-  // Discovery
-  {
-    id: 's3',
-    title: 'POI Detail',
-    short: 'POI',
-    variants: [{ id: 's3a', label: 'Light · info + tabs', theme: 'light', component: <S3A /> }],
-  },
-  {
-    id: 's4',
-    title: 'Gem Discovery',
-    short: 'Gems',
-    variants: [{ id: 's4a', label: 'Light · map + list', theme: 'light', component: <S4A /> }],
+    id: 's-smart',
+    title: 'Smart Walk',
+    short: 'Smart',
+    variants: [{ id: 'smart-walk', label: 'Dark · merged + auto-lock', theme: 'dark', component: <ScreenSmartWalk /> }],
   },
 
   // Voice
@@ -471,7 +441,7 @@ function VariantBar({
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const [activeId, setActiveId] = useState('splash')
+  const [activeId, setActiveId] = useState('home-a')
 
   // Resolve active variant + group
   const activeGroup = SCREENS.find((g) => g.variants.some((v) => v.id === activeId))!

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { colors, borders } from '../tokens'
 import { Waveform } from '../primitives/waveform'
+import { NavBar, NAV_HEIGHT } from '../primitives/nav-bar'
 import { BackIcon, CloseIcon, ChevronIcon, MicIcon, PauseIcon } from '../icons'
 
 // ── Variant A: Full-screen immersive mic ──────────────────────────────────
@@ -272,6 +273,10 @@ export function S2C() {
           <MicIcon size={18} color={colors.mist} />
         </div>
       </div>
+
+      {/* Spacer for NavBar */}
+      <div style={{ height: NAV_HEIGHT }} />
+      <NavBar active={2} />
     </div>
   )
 }

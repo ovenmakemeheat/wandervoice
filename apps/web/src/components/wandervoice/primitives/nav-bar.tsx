@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { colors } from '../tokens'
-import { HomeIcon, GemIcon, PersonIcon } from '../icons'
+import { HomeIcon, MapPinIcon, ChatIcon, PersonIcon } from '../icons'
 
 export const NAV_HEIGHT = 72
 
@@ -10,7 +10,7 @@ interface NavBarProps {
   active?: number
 }
 
-const ICONS = [HomeIcon, GemIcon, PersonIcon]
+const ICONS = [HomeIcon, MapPinIcon, ChatIcon, PersonIcon]
 
 export function NavBar({ active: initialActive = 0 }: NavBarProps) {
   const [tab, setTab] = useState(initialActive)
